@@ -552,7 +552,7 @@ test("the Hour replays: the same seed and actions draw the same cards", () => {
   assert.deepEqual(run(), run());
 });
 
-test("Recused: the leader cannot join their own team, and the card only comes when a clean team is still possible", () => {
+test("Recused: the leader cannot join their own team; the card never comes on the last two missions, nor when no clean team is possible", () => {
   let st = hourGame(7, seedFor(7, "recused"));
   const lead = st.leader;
   const others = [0, 1, 2, 3, 4, 5, 6].filter((s) => s !== lead);
@@ -562,8 +562,12 @@ test("Recused: the leader cannot join their own team, and the card only comes wh
   // Five players, mission 2 needs three: a brother leader has only two other brothers.
   assert.equal(E.hourAllowed(5, 1, "recused"), false);
   assert.equal(E.hourAllowed(5, 0, "recused"), true);
+  // Never on missions 4 and 5, even where the seats would allow it.
+  assert.equal(E.hourAllowed(10, 2, "recused"), true);
+  assert.equal(E.hourAllowed(10, 3, "recused"), false);
+  assert.equal(E.hourAllowed(10, 4, "recused"), false);
   for (let n = 5; n <= 10; n++) {
-    for (let m = 0; m < 5; m++) assert.equal(E.hourAllowed(n, m, "recused"), n - E.SPIES[n] - 1 >= E.teamSize(n, m), `n=${n} m=${m}`);
+    for (let m = 0; m < 5; m++) assert.equal(E.hourAllowed(n, m, "recused"), m < 3 && n - E.SPIES[n] - 1 >= E.teamSize(n, m), `n=${n} m=${m}`);
   }
 });
 

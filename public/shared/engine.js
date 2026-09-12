@@ -50,13 +50,15 @@ export const HOURS = ["light", "signed", "orders", "wounded", "silence", "quiet"
 
 // Whether a card may be drawn for this mission. Travel Light never takes a
 // two-seat team down to one, and nobody is laid up on the fifth mission,
-// where a random absence would decide the game by luck. Recused is drawn only
-// when a brother leader could still send a team of brothers without themself;
-// otherwise the card would not tilt the round, it would decide it.
+// where a random absence would decide the game by luck. Recused stays out of
+// the last two missions, where teams are biggest and the game gets decided,
+// and is drawn only when a brother leader could still send a team of
+// brothers without themself; otherwise it would not tilt the round, it would
+// decide it.
 export function hourAllowed(n, mission, card) {
   if (card === "light") return TEAM[n][mission] > 2;
   if (card === "wounded") return mission < MISSIONS - 1;
-  if (card === "recused") return n - SPIES[n] - 1 >= TEAM[n][mission];
+  if (card === "recused") return mission < MISSIONS - 2 && n - SPIES[n] - 1 >= TEAM[n][mission];
   return true;
 }
 
