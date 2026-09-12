@@ -41,7 +41,6 @@ export function sayAction(action, view, ctx) {
   }
 
   if (action.type === "vote") {
-    if (view.hour === "dark") return null; // Lights Out: saying how you voted would undo it
     if (why.forced) return pick(rng, T.voteForced);
     if (!action.approve) {
       if (!why.onTeam && rng.next() < 0.4) return pick(rng, T.rejectNotMe);

@@ -462,7 +462,6 @@ test("the Hour: one card a round, never repeated, only where allowed, always obe
           assert.equal(p.team.length, E.teamSize(n, r.mission) - (r.hour === "light" ? 1 : 0));
           if (r.wounded != null) assert.ok(!p.team.includes(r.wounded), "a laid-up seat was proposed");
           if (r.hour === "recused") assert.ok(!p.team.includes(p.leader), "a recused leader went on their own team");
-          assert.equal(!!p.dark, r.hour === "dark", "only a Lights Out round counts in the dark");
         }
         if (!r.result) continue;
         const spiesOn = r.result.team.filter((s) => st.roles[s] === SPY).length;
@@ -569,22 +568,4 @@ test("Recused: the leader cannot join their own team; the card never comes on th
   for (let n = 5; n <= 10; n++) {
     for (let m = 0; m < 5; m++) assert.equal(E.hourAllowed(n, m, "recused"), m < 3 && n - E.SPIES[n] - 1 >= E.teamSize(n, m), `n=${n} m=${m}`);
   }
-});
-
-test("Lights Out: only the tally is public until the game ends", () => {
-  let st = hourGame(5, seedFor(5, "dark"));
-  st = voteAll(propose(st, [0, 1]), (s) => s < 2); // 2 of 5 approve: rejected
-  for (let seat = 0; seat < 5; seat++) {
-    const v = E.view(st, seat);
-    const p = v.rounds[0].proposals[0];
-    assert.equal(p.votes, null);
-    assert.equal(p.yes, 2);
-    assert.equal(p.approved, false);
-    assert.equal(v.event.votes, null);
-    assert.equal(v.event.yes, 2);
-  }
-  assert.deepEqual(st.rounds[0].proposals[0].votes, [true, true, false, false, false], "the state keeps the votes");
-  for (let i = 0; i < 4; i++) st = voteAll(propose(st, [0, 1]), () => false);
-  assert.equal(st.phase, "over");
-  assert.deepEqual(E.view(st, 3).rounds[0].proposals[0].votes, [true, true, false, false, false], "revealed at the end");
 });

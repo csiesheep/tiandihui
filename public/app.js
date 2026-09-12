@@ -174,14 +174,11 @@ function afterStep() {
   if (ev && ev.type === "voted") {
     game.stage = "voteResult";
     game.lastVote = ev;
+    const rejecters = ev.votes.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
     const outcome = ev.approved ? t("sys.approvedWord") : t("sys.rejectedWord");
-    if (ev.dark) addSys(t("hour.darkResult", { yes: ev.yes, no: game.st.n - ev.yes, outcome }));
-    else {
-      const rejecters = ev.votes.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
-      addSys(rejecters.length
-        ? t("sys.voteResult", { yes: ev.yes, no: game.st.n - ev.yes, outcome, rejecters: nameList(rejecters) })
-        : t("sys.voteResultNone", { yes: ev.yes, no: game.st.n - ev.yes, outcome }));
-    }
+    addSys(rejecters.length
+      ? t("sys.voteResult", { yes: ev.yes, no: game.st.n - ev.yes, outcome, rejecters: nameList(rejecters) })
+      : t("sys.voteResultNone", { yes: ev.yes, no: game.st.n - ev.yes, outcome }));
     if (ev.over) addSys(t("sys.spiesWinRejects"), true);
     render();
     game.stageTimer = setTimeout(continueStage, ev.over ? 2500 : 4000);
@@ -419,8 +416,7 @@ function renderRing(v) {
   const ring = $("ring");
   ring.style.setProperty("--r", `${Math.round(ring.clientWidth * 0.41)}px`);
   const team = v.proposal || [];
-  // Lights Out: the tally shows in the centre, but no seat shows its vote.
-  const votes = game.stage === "voteResult" && game.lastVote && !game.lastVote.dark ? game.lastVote.votes : null;
+  const votes = game.stage === "voteResult" && game.lastVote ? game.lastVote.votes : null;
   const recusedSeat = v.hour === "recused" && v.phase === "propose" && !game.stage ? v.leader : null;
   const mySpies = v.spies || [];
   const proposing = v.phase === "propose" && v.leader === me && !game.stage;
@@ -459,7 +455,7 @@ function centerHtml(v) {
   const me = game.me;
   if (game.stage === "voteResult" && game.lastVote) {
     const ev = game.lastVote;
-    return `<span class="k">${esc(ev.approved ? t("table.approved") : t("table.rejectedTeam"))}</span><div class="big ${ev.approved ? "blue" : "red"}">${ev.yes}–${v.n - ev.yes}</div><span class="sub">${esc((ev.dark ? t("hour.darkShown") + " · " : "") + (ev.approved ? t("table.teamGoes") : (v.phase === "over" ? "" : t("table.nextLeader", { name: nameOf(v.leader) }))))}</span>`;
+    return `<span class="k">${esc(ev.approved ? t("table.approved") : t("table.rejectedTeam"))}</span><div class="big ${ev.approved ? "blue" : "red"}">${ev.yes}–${v.n - ev.yes}</div><span class="sub">${esc(ev.approved ? t("table.teamGoes") : (v.phase === "over" ? "" : t("table.nextLeader", { name: nameOf(v.leader) })))}</span>`;
   }
   if (game.stage === "missionResult" && v.event && v.event.type === "mission") {
     const ev = v.event;

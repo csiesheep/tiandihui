@@ -65,7 +65,7 @@ export default {
   },
   hour: {
     label: "天時", left: "剩 {n} 張",
-    names: { light: "輕裝", signed: "畫押", orders: "密令", wounded: "掛彩", silence: "封口", quiet: "無事", dark: "熄燈", recused: "避嫌" },
+    names: { light: "輕裝", signed: "畫押", orders: "密令", wounded: "掛彩", silence: "封口", quiet: "無事", recused: "避嫌" },
     desc: {
       light: "這一趟少帶一個人。",
       signed: "牌不洗。翻開時，誰出什麼全桌看得見。",
@@ -73,7 +73,6 @@ export default {
       wounded: "{name} 掛了彩，這一趟派不出去。",
       silence: "這一回合不許說話。",
       quiet: "今夜無事。",
-      dark: "熄燈投票。只公布贊成幾票、反對幾票，誰投了什麼要到遊戲結束才揭曉。",
       recused: "這一趟，隊長不能派自己。",
     },
     announce: "天時・{name}：{desc}",
@@ -81,7 +80,7 @@ export default {
     ordersClean: "密令之下全隊出成功：{team} 清白。", ordersCleanShort: "密令之下，全隊清白",
     mustFail: "密令在身，只能出失敗", signedNote: "這一趟畫押，牌不洗。",
     silenced: "封口：這一回合不許說話", hurt: "掛彩", signedShown: "畫押翻牌",
-    darkResult: "熄燈：{yes}–{no}，{outcome}。", darkShown: "熄燈點票", recusedTag: "避嫌",
+    recusedTag: "避嫌",
   },
   names: ["阿七", "石頭", "馬三", "秀娘", "老刀", "阿九", "鐵牛", "小六", "阿龍", "春娘"],
   talk: {

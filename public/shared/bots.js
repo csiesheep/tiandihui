@@ -14,9 +14,8 @@
 //
 // The Hour deck feeds the same model: a signed result names the seats that
 // failed outright, and a result under orders gives the exact number of spies
-// on the team, because none of them could play Success. Under Lights Out the
-// votes are simply not there to read, and a recused leader is one more seat
-// nobody may pick.
+// on the team, because none of them could play Success. A recused leader is
+// one more seat nobody may pick.
 //
 // Every decision also carries a `why`, so the table-talk module can say
 // something true about it.
@@ -104,7 +103,7 @@ export function posterior(view, { knownClean = null, voteWeight = 0.5, fog = 0 }
     const rate = SPY_FAIL_RATE[round.mission] ?? 0.9;
     round.proposals.forEach((p, idx) => {
       // The fifth proposal is forced (approve or lose), so it says nothing.
-      if (voteWeight <= 0 || idx >= E.MAX_REJECTS - 1 || !p.votes) return; // !votes: counted in the dark
+      if (voteWeight <= 0 || idx >= E.MAX_REJECTS - 1) return;
       const teamMask = maskOf(p.team);
       for (const carries of [false, true]) {
         const pS = carries ? P_APPROVE.spy.withSpy : P_APPROVE.spy.clean;
@@ -270,7 +269,6 @@ function spyDecision(view, lv, rng) {
     if (view.rejects >= E.MAX_REJECTS - 1) approve = false;          // the fifth rejection wins
     else if (decisive) approve = canSink;                              // this vote decides the game
     else if (view.leader === me) approve = true;                       // nobody rejects their own team
-    else if (view.hour === "dark") approve = canSink;                  // in the dark there is nobody to fool
     else if (rng.next() < lv.spyMimic) {
       // Vote as an operative in this seat would, from the outsider posterior
       // (which does not know I am a spy), so my votes carry no signal.
