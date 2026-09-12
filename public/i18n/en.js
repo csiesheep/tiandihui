@@ -67,7 +67,7 @@ export default {
   },
   hour: {
     label: "The Hour", left: "{n} left",
-    names: { light: "Travel Light", signed: "Signed", orders: "Orders from Above", wounded: "Laid Up", silence: "Hold Your Tongue", quiet: "Quiet Night" },
+    names: { light: "Travel Light", signed: "Signed", orders: "Orders from Above", wounded: "Laid Up", silence: "Hold Your Tongue", quiet: "Quiet Night", dark: "Lights Out", recused: "Recused" },
     desc: {
       light: "The team goes one short this round.",
       signed: "No shuffle. When the cards turn over, everyone sees who played what.",
@@ -75,12 +75,15 @@ export default {
       wounded: "{name} is laid up and can't be sent this round.",
       silence: "Nobody speaks this round.",
       quiet: "Nothing stirs tonight.",
+      dark: "Votes are cast in the dark. Only the tally is shown, and who voted which way stays hidden until the game ends.",
+      recused: "The leader may not put themself on the team this round.",
     },
     announce: "The Hour: {name}. {desc}",
     signedResult: "Signed: {who} played Fail.", signedClean: "Signed: every card was a Success.",
     ordersClean: "Under orders, every card was a Success: {team} are clean.", ordersCleanShort: "under orders: the whole team is clean",
     mustFail: "under orders: Fail only", signedNote: "Signed round: the cards are not shuffled.",
     silenced: "Hold your tongue: no talking this round", hurt: "laid up", signedShown: "Signed and revealed",
+    darkResult: "Lights out: {yes}–{no}, {outcome}.", darkShown: "counted in the dark", recusedTag: "recused",
   },
   names: ["Ah Qi", "Shitou", "Ma San", "Xiuniang", "Old Dao", "Ah Jiu", "Tieniu", "Xiao Liu", "Ah Long", "Chunniang"],
   talk: {

@@ -28,7 +28,7 @@ export function sayAction(action, view, ctx) {
     const trusted = (why.trusted || action.team.filter((s) => s !== me));
     const [a, b] = trusted;
     let line;
-    if (view.mission === 0) {
+    if (view.mission === 0 && action.team.includes(me)) { // the round-one lines say "with me"
       line = fill(pick(rng, trusted.length >= 2 ? T.proposeFirst : T.proposeFirst2), { a: N(a), b: N(b) });
     } else {
       const proven = trusted.find((s) => sharedCleanMission(view, me, s));
@@ -41,6 +41,7 @@ export function sayAction(action, view, ctx) {
   }
 
   if (action.type === "vote") {
+    if (view.hour === "dark") return null; // Lights Out: saying how you voted would undo it
     if (why.forced) return pick(rng, T.voteForced);
     if (!action.approve) {
       if (!why.onTeam && rng.next() < 0.4) return pick(rng, T.rejectNotMe);

@@ -199,3 +199,6 @@ table.h td { padding: 5px 6px; border-bottom: 1px solid var(--line); color: var(
 .log .sys.hourline { color: var(--gold); }
 table.h .hour-tag { font: 500 10px var(--body); color: var(--gold); white-space: nowrap; }
 .chat input:disabled, .chat .btn:disabled { opacity: .45; }
+
+/* Recused: the leader's seat, not tappable while the team is picked */
+.seat.recused .av { border-style: dashed; }

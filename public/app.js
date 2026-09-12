@@ -174,11 +174,14 @@ function afterStep() {
   if (ev && ev.type === "voted") {
     game.stage = "voteResult";
     game.lastVote = ev;
-    const rejecters = ev.votes.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
     const outcome = ev.approved ? t("sys.approvedWord") : t("sys.rejectedWord");
-    addSys(rejecters.length
-      ? t("sys.voteResult", { yes: ev.yes, no: game.st.n - ev.yes, outcome, rejecters: nameList(rejecters) })
-      : t("sys.voteResultNone", { yes: ev.yes, no: game.st.n - ev.yes, outcome }));
+    if (ev.dark) addSys(t("hour.darkResult", { yes: ev.yes, no: game.st.n - ev.yes, outcome }));
+    else {
+      const rejecters = ev.votes.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
+      addSys(rejecters.length
+        ? t("sys.voteResult", { yes: ev.yes, no: game.st.n - ev.yes, outcome, rejecters: nameList(rejecters) })
+        : t("sys.voteResultNone", { yes: ev.yes, no: game.st.n - ev.yes, outcome }));
+    }
     if (ev.over) addSys(t("sys.spiesWinRejects"), true);
     render();
     game.stageTimer = setTimeout(continueStage, ev.over ? 2500 : 4000);
@@ -416,7 +419,9 @@ function renderRing(v) {
   const ring = $("ring");
   ring.style.setProperty("--r", `${Math.round(ring.clientWidth * 0.41)}px`);
   const team = v.proposal || [];
-  const votes = game.stage === "voteResult" && game.lastVote ? game.lastVote.votes : null;
+  // Lights Out: the tally shows in the centre, but no seat shows its vote.
+  const votes = game.stage === "voteResult" && game.lastVote && !game.lastVote.dark ? game.lastVote.votes : null;
+  const recusedSeat = v.hour === "recused" && v.phase === "propose" && !game.stage ? v.leader : null;
   const mySpies = v.spies || [];
   const proposing = v.phase === "propose" && v.leader === me && !game.stage;
   const anchor = me === null ? 0 : me;
@@ -424,6 +429,7 @@ function renderRing(v) {
   for (let i = 0; i < n; i++) {
     const a = (((i - anchor) / n) + 0.5) % 1; // me at the bottom
     const hurt = v.wounded != null && i === v.wounded && v.phase !== "over" && game.stage !== "missionResult";
+    const recused = i === recusedSeat;
     const cls = ["seat"];
     if (i === me) cls.push("you");
     if (i === v.leader && v.phase !== "over") cls.push("lead");
@@ -433,7 +439,8 @@ function renderRing(v) {
     if ((mySpies.includes(i) || (v.role === E.SPY && i === me)) && v.phase !== "over") cls.push("spy");
     if ((v.phase === "vote" || v.phase === "mission") && team.length && !team.includes(i) && !game.stage) cls.push("dim");
     if (hurt) cls.push("hurt");
-    if (proposing && !hurt) cls.push("tappable");
+    if (recused) cls.push("recused");
+    if (proposing && !hurt && !recused) cls.push("tappable");
     let badge = "";
     if (votes) badge = `<span class="v ${votes[i] ? "y" : "n"}">${votes[i] ? "✓" : "✕"}</span>`;
     else if (v.phase === "vote" && v.voted && !game.stage) badge = `<span class="done ${v.voted[i] ? "on" : ""}"></span>`;
@@ -441,8 +448,8 @@ function renderRing(v) {
     const isBot = game.mode === "solo" ? i !== me : !!game.lobby?.seats?.[i]?.ai;
     const ai = isBot ? `<span class="ai">${esc(t("table.ai"))}</span>` : "";
     const initial = esc([...nameOf(i)][0] || "?");
-    const hurtTag = hurt ? `<span class="hurt-tag">${esc(t("hour.hurt"))}</span>` : "";
-    html.push(`<button type="button" class="${cls.join(" ")}" style="--a:${a}" data-seat="${i}" ${proposing && !hurt ? "" : "tabindex=-1"}><span class="av">${initial}${ai}${badge}</span><span class="nm">${esc(i === me ? t("table.you") : nameOf(i))}</span>${hurtTag}</button>`);
+    const hurtTag = hurt ? `<span class="hurt-tag">${esc(t("hour.hurt"))}</span>` : recused ? `<span class="hurt-tag">${esc(t("hour.recusedTag"))}</span>` : "";
+    html.push(`<button type="button" class="${cls.join(" ")}" style="--a:${a}" data-seat="${i}" ${proposing && !hurt && !recused ? "" : "tabindex=-1"}><span class="av">${initial}${ai}${badge}</span><span class="nm">${esc(i === me ? t("table.you") : nameOf(i))}</span>${hurtTag}</button>`);
   }
   html.push(`<div class="center">${centerHtml(v)}</div>`);
   ring.innerHTML = html.join("");
@@ -452,7 +459,7 @@ function centerHtml(v) {
   const me = game.me;
   if (game.stage === "voteResult" && game.lastVote) {
     const ev = game.lastVote;
-    return `<span class="k">${esc(ev.approved ? t("table.approved") : t("table.rejectedTeam"))}</span><div class="big ${ev.approved ? "blue" : "red"}">${ev.yes}–${v.n - ev.yes}</div><span class="sub">${esc(ev.approved ? t("table.teamGoes") : (v.phase === "over" ? "" : t("table.nextLeader", { name: nameOf(v.leader) })))}</span>`;
+    return `<span class="k">${esc(ev.approved ? t("table.approved") : t("table.rejectedTeam"))}</span><div class="big ${ev.approved ? "blue" : "red"}">${ev.yes}–${v.n - ev.yes}</div><span class="sub">${esc((ev.dark ? t("hour.darkShown") + " · " : "") + (ev.approved ? t("table.teamGoes") : (v.phase === "over" ? "" : t("table.nextLeader", { name: nameOf(v.leader) }))))}</span>`;
   }
   if (game.stage === "missionResult" && v.event && v.event.type === "mission") {
     const ev = v.event;
@@ -482,7 +489,7 @@ function centerHtml(v) {
 }
 function togglePick(seat) {
   const v = curView();
-  if (v.wounded != null && seat === v.wounded) return;
+  if ((v.wounded != null && seat === v.wounded) || (v.hour === "recused" && seat === v.leader)) return;
   if (game.picks.has(seat)) game.picks.delete(seat);
   else if (game.picks.size < v.teamSize) game.picks.add(seat);
   renderRing(v); renderPanel(v);

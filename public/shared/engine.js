@@ -33,9 +33,9 @@ export const failsNeeded = (n, mission) => (n >= 7 && mission === 3 ? 2 : 1);
 export const teamSize = (n, mission) => TEAM[n][mission];
 
 // ---------- the Hour deck (天時) ----------
-// An optional deck of six table-wide conditions. One card is drawn face up at
+// An optional deck of eight table-wide conditions. One card is drawn face up at
 // the start of every round and holds for that round only. Drawn cards are not
-// returned, so a five-round game shows five of the six and anyone can count
+// returned, so a five-round game shows five of the eight and anyone can count
 // what is left.
 //   light    輕裝  the team goes one short
 //   signed   畫押  no shuffle: who played what is public
@@ -43,14 +43,20 @@ export const teamSize = (n, mission) => TEAM[n][mission];
 //   wounded  掛彩  one random seat cannot be sent this round
 //   silence  封口  nobody talks this round (enforced by the clients and room)
 //   quiet    無事  nothing
-export const HOURS = ["light", "signed", "orders", "wounded", "silence", "quiet"];
+//   dark     熄燈  votes are counted in the dark: only the tally is public
+//                  until the game ends
+//   recused  避嫌  the leader may not put themself on the team
+export const HOURS = ["light", "signed", "orders", "wounded", "silence", "quiet", "dark", "recused"];
 
 // Whether a card may be drawn for this mission. Travel Light never takes a
 // two-seat team down to one, and nobody is laid up on the fifth mission,
-// where a random absence would decide the game by luck.
+// where a random absence would decide the game by luck. Recused is drawn only
+// when a brother leader could still send a team of brothers without themself;
+// otherwise the card would not tilt the round, it would decide it.
 export function hourAllowed(n, mission, card) {
   if (card === "light") return TEAM[n][mission] > 2;
   if (card === "wounded") return mission < MISSIONS - 1;
+  if (card === "recused") return n - SPIES[n] - 1 >= TEAM[n][mission];
   return true;
 }
 
@@ -168,6 +174,7 @@ export function apply(prev, action) {
       if (new Set(team).size !== team.length) throw new Error("duplicate seat on team");
       if (team.some((s) => !Number.isInteger(s) || s < 0 || s >= st.n)) throw new Error("bad seat on team");
       if (st.wounded != null && team.includes(st.wounded)) throw new Error(`seat ${st.wounded} is laid up this round`);
+      if (st.hour === "recused" && team.includes(seat)) throw new Error("the leader is recused this round");
       st.proposal = team;
       st.votes = new Array(st.n).fill(null);
       st.phase = "vote";
@@ -183,8 +190,11 @@ export function apply(prev, action) {
       // Everyone has voted: votes become public, and the proposal resolves.
       const yes = st.votes.filter(Boolean).length;
       const approved = yes * 2 > st.n; // a tie rejects
-      currentRound(st).proposals.push({ leader: st.leader, team: st.proposal, votes: st.votes, approved });
+      const record = { leader: st.leader, team: st.proposal, votes: st.votes, approved };
       st.event = { type: "voted", team: st.proposal, votes: st.votes, yes, approved };
+      // Lights Out: the state keeps the votes; views show only the tally until the game ends.
+      if (st.hour === "dark") { record.dark = true; st.event.dark = true; }
+      currentRound(st).proposals.push(record);
       if (approved) {
         st.played = new Array(st.n).fill(null);
         st.votes = null;
@@ -281,6 +291,11 @@ function endGame(st, winner, reason) {
   st.event = { ...(st.event || {}), over: true, winner, reason };
 }
 
+// A Lights Out vote leaves the process without its per-seat votes until the
+// game is over; the tally (yes) stays.
+const darkened = (ev, over) => (ev.dark && !over && ev.votes ? { ...ev, votes: null } : ev);
+const darkProposal = (p, over) => (p.dark && !over ? { ...p, votes: null, yes: p.votes.filter(Boolean).length } : p);
+
 // ---------- per-seat projection ----------
 // `seat` is the viewer, or null for a spectator. This is the only thing that
 // may leave the process that holds the full state.
@@ -318,11 +333,11 @@ export function view(state, seat = null) {
     hour: state.hour ?? null,
     wounded: state.wounded ?? null,
     hourDeck: state.hourDeck ? state.hourDeck.slice().sort((a, b) => HOURS.indexOf(a) - HOURS.indexOf(b)) : [],
-    rounds: clone(state.rounds),
+    rounds: clone(state.rounds).map((r) => ({ ...r, proposals: r.proposals.map((p) => darkProposal(p, over)) })),
     score: { ...state.score },
     winner: state.winner,
     reason: state.reason,
-    event: state.event ? clone(state.event) : null,
+    event: state.event ? darkened(clone(state.event), over) : null,
     waitingOn: mustAct(state),
   };
   return v;

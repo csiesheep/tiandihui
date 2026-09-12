@@ -341,13 +341,19 @@ export class Room {
     if (ev && (ev.type === "voted" || ev.type === "mission") && !room.stage) {
       const until = now + STAGE_MS[ev.type];
       if (ev.type === "voted") {
-        const rejecters = ev.votes.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
         const outcome = ev.approved ? this.t("sys.approvedWord") : this.t("sys.rejectedWord");
-        this.say(null, rejecters.length
-          ? this.t("sys.voteResult", { yes: ev.yes, no: st.n - ev.yes, outcome, rejecters: this.nameList(rejecters) })
-          : this.t("sys.voteResultNone", { yes: ev.yes, no: st.n - ev.yes, outcome }));
+        if (ev.dark) {
+          this.say(null, this.t("hour.darkResult", { yes: ev.yes, no: st.n - ev.yes, outcome }));
+        } else {
+          const rejecters = ev.votes.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
+          this.say(null, rejecters.length
+            ? this.t("sys.voteResult", { yes: ev.yes, no: st.n - ev.yes, outcome, rejecters: this.nameList(rejecters) })
+            : this.t("sys.voteResultNone", { yes: ev.yes, no: st.n - ev.yes, outcome }));
+        }
         if (ev.over) this.say(null, this.t("sys.spiesWinRejects"), true);
-        room.stage = { kind: "voteResult", until, event: ev };
+        // The stage is sent to every socket as-is, so a Lights Out vote travels
+        // without its per-seat votes until the game is over.
+        room.stage = { kind: "voteResult", until, event: ev.dark && !ev.over ? { ...ev, votes: null } : ev };
       } else {
         const cards = ev.cards
           ? ev.cards.map((c) => ({ fail: !c.success, seat: c.seat }))

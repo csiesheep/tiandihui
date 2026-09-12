@@ -14,7 +14,9 @@
 //
 // The Hour deck feeds the same model: a signed result names the seats that
 // failed outright, and a result under orders gives the exact number of spies
-// on the team, because none of them could play Success.
+// on the team, because none of them could play Success. Under Lights Out the
+// votes are simply not there to read, and a recused leader is one more seat
+// nobody may pick.
 //
 // Every decision also carries a `why`, so the table-talk module can say
 // something true about it.
@@ -102,7 +104,7 @@ export function posterior(view, { knownClean = null, voteWeight = 0.5, fog = 0 }
     const rate = SPY_FAIL_RATE[round.mission] ?? 0.9;
     round.proposals.forEach((p, idx) => {
       // The fifth proposal is forced (approve or lose), so it says nothing.
-      if (voteWeight <= 0 || idx >= E.MAX_REJECTS - 1) return;
+      if (voteWeight <= 0 || idx >= E.MAX_REJECTS - 1 || !p.votes) return; // !votes: counted in the dark
       const teamMask = maskOf(p.team);
       for (const carries of [false, true]) {
         const pS = carries ? P_APPROVE.spy.withSpy : P_APPROVE.spy.clean;
@@ -162,11 +164,19 @@ const sortNum = (a) => a.slice().sort((x, y) => x - y);
 // The operative's approval rule: a team is fine if it is not much worse than
 // the best team this seat could propose. The vote track loosens it.
 const wouldApprove = (pf, bestPf, view, lv) => pf <= bestPf + lv.slack + 0.08 * view.rejects;
-// Every legal team of size k that includes `me` when it can. Nobody may take
-// the seat that is laid up this round, including `me`.
+// Seats nobody may put on a team this round: whoever is laid up, and the
+// leader when recused.
+function barredSeats(view) {
+  const b = new Set();
+  if (view.wounded != null) b.add(view.wounded);
+  if (view.hour === "recused") b.add(view.leader);
+  return b;
+}
+// Every legal team of size k that includes `me` when it can.
 function teamsFor(view, me, k) {
-  const others = [...Array(view.n).keys()].filter((s) => s !== me && s !== view.wounded);
-  return view.wounded === me ? combos(others, k) : combos(others, k - 1).map((rest) => sortNum([me, ...rest]));
+  const barred = barredSeats(view);
+  const others = [...Array(view.n).keys()].filter((s) => s !== me && !barred.has(s));
+  return barred.has(me) ? combos(others, k) : combos(others, k - 1).map((rest) => sortNum([me, ...rest]));
 }
 // Best team for `me`, by P(fail), under a posterior.
 function bestTeamWith(sets, view, me, k, need) {
@@ -229,13 +239,14 @@ function spyDecision(view, lv, rng) {
   const exposed = view.hour === "signed"; // a Fail on this round names whoever played it
 
   if (view.phase === "propose") {
-    const pool = [...Array(n).keys()].filter((s) => s !== view.wounded);
-    const canSelf = view.wounded !== me;
+    const barred = barredSeats(view);
+    const pool = [...Array(n).keys()].filter((s) => !barred.has(s));
+    const canSelf = !barred.has(me); // a recused spy leader sends a fellow spy instead
     // Me plus the most-trusted operatives: exactly the spies it takes to sink
     // the mission, and a team that reads as a sensible pick. On a signed round
     // a fail names its player, so the team just looks clean.
     const spiesWanted = exposed && !lastFail ? (canSelf ? 1 : 0) : Math.min(need, spies.length, k);
-    const otherSpies = spies.filter((s) => s !== me && s !== view.wounded).sort((a, b) => m[a] - m[b])
+    const otherSpies = spies.filter((s) => s !== me && !barred.has(s)).sort((a, b) => m[a] - m[b])
       .slice(0, Math.max(0, spiesWanted - (canSelf ? 1 : 0)));
     const ops = pool.filter((s) => !isSpy(s)).sort((a, b) => m[a] - m[b]);
     const fill = (first) => {
@@ -259,6 +270,7 @@ function spyDecision(view, lv, rng) {
     if (view.rejects >= E.MAX_REJECTS - 1) approve = false;          // the fifth rejection wins
     else if (decisive) approve = canSink;                              // this vote decides the game
     else if (view.leader === me) approve = true;                       // nobody rejects their own team
+    else if (view.hour === "dark") approve = canSink;                  // in the dark there is nobody to fool
     else if (rng.next() < lv.spyMimic) {
       // Vote as an operative in this seat would, from the outsider posterior
       // (which does not know I am a spy), so my votes carry no signal.

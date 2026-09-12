@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import * as E from "../public/shared/engine.js";
 import * as B from "../public/shared/bots.js";
 import { playGame, simulate } from "./sim.js";
+import { sayAction } from "../public/shared/talk.js";
+import en from "../public/i18n/en.js";
 
 const { RESISTANCE, SPY } = E;
 const ready = (st) => { for (let s = 0; s < st.n; s++) st = E.apply(st, { type: "ready", seat: s }); return st; };
@@ -224,4 +226,37 @@ test("no bot proposes the seat that is laid up, and every proposal has the round
     checked++;
   }
   assert.ok(checked > 10);
+});
+
+test("a recused leader bot keeps itself off, and every proposal has the round's size", () => {
+  let checked = 0;
+  for (let seed = 0; seed < 4000 && checked < 30; seed++) {
+    const st = ready(E.createGame(seed, 8, { hours: true }));
+    if (st.hour !== "recused") continue;
+    for (const lvl of B.LEVELS) {
+      const a = B.decide(E.view(st, st.leader), lvl, E.makeRng(seed));
+      assert.equal(a.team.includes(st.leader), false);
+      assert.equal(a.team.length, E.roundTeamSize(st));
+    }
+    checked++;
+  }
+  assert.ok(checked > 10);
+});
+
+test("in the dark a spy bot votes its real interest, and no bot says how it voted", () => {
+  const st = openOn(7, "dark");
+  const spies = E.spiesOf(st);
+  const spy = spies.find((s) => s !== st.leader);
+  const ops = [0, 1, 2, 3, 4, 5, 6].filter((s) => !spies.includes(s));
+  const withSpy = propose(st, [spy, ops[0]]);
+  const clean = propose(st, [ops[0], ops[1]]);
+  assert.equal(B.decide(E.view(withSpy, spy), "hard", E.makeRng(1)).approve, true);
+  assert.equal(B.decide(E.view(clean, spy), "hard", E.makeRng(1)).approve, false);
+  const ctx = { rng: E.makeRng(3), names: en.names.slice(0, 7), T: en.talk, sep: ", ", and: " and " };
+  for (let seat = 0; seat < 7; seat++) {
+    const view = E.view(withSpy, seat);
+    const a = B.decide(view, "normal", E.makeRng(seat));
+    assert.equal(a.type, "vote");
+    assert.equal(sayAction(a, view, ctx), null);
+  }
 });
