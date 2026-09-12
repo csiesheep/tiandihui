@@ -16,11 +16,11 @@
 <link rel="canonical" href="https://games.csiesheep.com/tiandihui/">
 <!-- Kept out of the index until the ship milestone. -->
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0e1116">
+<meta name="theme-color" content="#ece2cb">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=LXGW+WenKai+TC:wght@400;700&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -35,7 +35,10 @@
 
 <!-- ===== Landing ===== -->
 <main id="view-landing" class="scr" hidden>
-  <p class="hero" id="hero"></p>
+  <div class="hero-wrap">
+    <div class="hero-l"><p class="hero" id="hero"></p><span class="hero-tag" data-t="heroTag"></span></div>
+    <div class="hero-r"><div class="seal"><span>天地</span></div><span class="hero-n" data-t="heroN"></span></div>
+  </div>
   <p class="tag-line" data-t="tagline"></p>
   <div class="spacer"></div>
   <button type="button" class="btn p" id="btnPlay" data-t="landing.play"></button>
@@ -52,8 +55,8 @@
 
 <!-- ===== Solo setup ===== -->
 <main id="view-setup" class="scr" hidden>
-  <div class="bar"><a href="." data-link data-t="nav.back"></a><span>solo</span></div>
-  <p class="ph"><span data-t="setup.title"></span><small id="setupSub"></small></p>
+  <div class="bar"><a href="." data-link data-t="nav.back"></a><span data-t="nav.solo"></span></div>
+  <div class="head"><p class="ph"><span data-t="setup.title"></span><small id="setupSub"></small></p><div class="seal">桌</div></div>
   <span class="lab" data-t="setup.players"></span>
   <div class="stepper"><button type="button" id="pMinus">&minus;</button><b id="pCount">7</b><button type="button" id="pPlus">+</button></div>
   <div class="field small" id="pSummary"></div>
@@ -74,7 +77,7 @@
 <!-- ===== Room lobby ===== -->
 <main id="view-lobby" class="scr" hidden>
   <div class="bar"><button type="button" id="lbLeave" class="linkish" data-t="lobby.leave"></button><span data-t="lobby.room"></span></div>
-  <div class="code" id="lbCode">····</div>
+  <div class="codebox"><span class="lab" data-t="landing.code"></span><div class="code" id="lbCode">····</div></div>
   <div class="row"><button type="button" class="btn sm gh" id="lbCopy" data-t="lobby.copy"></button><button type="button" class="btn sm gh" id="lbShare" data-t="lobby.share"></button></div>
   <span class="lab" id="lbSeatsLab"></span>
   <div class="list" id="lbSeats"></div>
@@ -90,7 +93,7 @@
   </div>
   <p class="note" id="lbStatus"></p>
   <div class="log" id="lbLog"></div>
-  <div class="chat"><label class="field grow"><input id="lbChat" maxlength="200" autocomplete="off"></label><button type="button" class="btn sm gh" id="lbSend">↑</button></div>
+  <div class="chat"><label class="field grow"><input id="lbChat" maxlength="200" autocomplete="off"></label><button type="button" class="btn sm gh" id="lbSend"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
   <div class="spacer"></div>
   <div class="row"><button type="button" class="btn" id="lbReady"></button><button type="button" class="btn p" id="lbStart" hidden></button></div>
 </main>
@@ -104,7 +107,7 @@
   <div class="ring" id="ring"></div>
   <div id="panel"></div>
   <div class="log" id="log" aria-live="polite"></div>
-  <div class="chat" id="chatRow" hidden><label class="field grow"><input id="chatIn" maxlength="200" autocomplete="off"></label><button type="button" class="btn sm gh" id="chatSend">↑</button></div>
+  <div class="chat" id="chatRow" hidden><label class="field grow"><input id="chatIn" maxlength="200" autocomplete="off"></label><button type="button" class="btn sm gh" id="chatSend"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
   <p class="foot" id="tableFoot" hidden><button type="button" class="linkish" id="tableLeave"></button></p>
 </main>
 

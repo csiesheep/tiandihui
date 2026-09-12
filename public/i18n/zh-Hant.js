@@ -2,10 +2,11 @@
 export default {
   lang: "zh-Hant",
   title: "天地會",
-  titleParts: ["天地", "", "會"],
+  heroTag: "同心同德・忠義千秋", heroN: "五至十人",
+  nums: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"],
   tagline: "五到十個人歃血為盟，其中兩到四個是清廷的密探。在他們搞砸三次任務之前，先辦成三次。",
   credit: "自由同人專案，與任何出版社無關。玩法參考 Don Eskridge 設計的社交推理遊戲 The Resistance。",
-  nav: { back: "返回", rules: "玩法說明", hub: "csiesheep games", lang: "EN" },
+  nav: { back: "返回", rules: "玩法說明", hub: "csiesheep games", lang: "EN", solo: "單人" },
   landing: { play: "跟機器人玩", create: "開房間", join: "加入", code: "房間代碼", soon: "開房間要先有名字：在下面輸入，然後開房或加入。", badCode: "請輸入四個字的房間代碼。", name: "你的名字" },
   setup: {
     title: "你的牌桌", sub: "你和 {bots} 個機器人。", players: "人數", bots: "機器人", name: "你的名字",
@@ -29,9 +30,10 @@ export default {
     res: "兄弟", resText: "你歃過血。設法上隊、把事辦成。別輕易相信任何人。",
     others: "其他密探", blind: "這局你不知道其他密探是誰。",
     hold: "按住看牌", release: "放開就蓋牌", ready: "知道了，開始",
+    stampSpy: "密", stampRes: "盟",
   },
   table: {
-    round: "第 {n} 回合", mission: "任務 {n}", missionShort: "任務{n}", rejected: "已否決 {n}／5", newRound: "新回合",
+    round: "第{n}回合", mission: "任務{n}", missionShort: "任務{n}", rejected: "已否決 {n}／5", newRound: "新回合",
     pick: "選", tapSeats: "點座位", propose: "提名隊伍", proposes: "{name} 提名", choosing: "{name} 正在挑隊員",
     voted: "{n} 人中 {done} 人已投票", approve: "贊成", reject: "反對", youVoted: "你投了{vote}",
     approved: "通過", rejectedTeam: "否決", teamGoes: "隊伍出發", nextLeader: "隊長換 {name}",
@@ -42,6 +44,7 @@ export default {
     shuffled: "洗牌後翻開", twoNeeded: "要兩張失敗才算失敗，一張不夠",
     continue: "繼續", youLead: "你是隊長", leads: "{name} 是隊長", you: "你", ai: "AI",
     log: "桌上", say: "說點什麼…", history: "紀錄",
+    sealOk: "成", sealNo: "敗", yesMark: "贊", noMark: "否",
   },
   over: {
     title: "遊戲結束", resWin: "天地會獲勝", spyWin: "清廷獲勝",
@@ -56,7 +59,7 @@ export default {
     voteResult: "{yes}–{no}，{outcome}。反對的：{rejecters}。",
     voteResultNone: "{yes}–{no}，{outcome}。",
     approvedWord: "通過", rejectedWord: "否決", nobody: "沒有人",
-    missionResult: "任務 {n} {outcome}：{fails}。",
+    missionResult: "任務{n}{outcome}：{fails}。",
     fifthWarning: "第五次提名。再被否決，清廷就贏了。",
     spiesWinRejects: "五次否決。清廷獲勝。",
     joined: "{name} 加入了。", left: "{name} 離開了。", leftGame: "{name} 離開了，這個位子改由機器人代打。",

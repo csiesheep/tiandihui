@@ -4,10 +4,10 @@
 export default {
   lang: "en",
   title: "Tiandihui Brotherhood",
-  titleParts: ["Tiandihui", "Brother", "hood"],
+  heroTag: "Sworn in blood", heroN: "5 – 10 players",
   tagline: "Five to ten of you swear the oath. Two, three or four serve the Qing court. Carry three missions through before they wreck three.",
   credit: "A free fan project, not affiliated with any publisher. The play is inspired by The Resistance, a social deduction game designed by Don Eskridge.",
-  nav: { back: "Back", rules: "How to play", hub: "csiesheep games", lang: "中文" },
+  nav: { back: "Back", rules: "How to play", hub: "csiesheep games", lang: "中文", solo: "solo" },
   landing: { play: "Play vs bots", create: "Create a room", join: "Join", code: "Room code", soon: "Rooms need a name: type yours below, then create or join.", badCode: "Enter the four-letter room code.", name: "Your name" },
   setup: {
     title: "Your table", sub: "You and {bots} bots.", players: "Players", bots: "Bots", name: "Your name",
@@ -31,6 +31,7 @@ export default {
     res: "BROTHER", resText: "You swore the oath in blood. Get on missions and carry them through. Trust nobody twice.",
     others: "The other informers", blind: "You don't know the other informers this game.",
     hold: "Hold to peek", release: "Release to hide", ready: "Got it, deal me in",
+    stampSpy: "密", stampRes: "盟",
   },
   table: {
     round: "Round {n}", mission: "Mission {n}", missionShort: "M{n}", rejected: "Rejected {n} of 5", newRound: "New round",
@@ -44,6 +45,7 @@ export default {
     shuffled: "Shuffled and revealed", twoNeeded: "two fails needed; one is not enough",
     continue: "Continue", youLead: "You lead", leads: "{name} leads", you: "You", ai: "AI",
     log: "Table", say: "Say something…", history: "History",
+    sealOk: "成", sealNo: "敗", yesMark: "✓", noMark: "✕",
   },
   over: {
     title: "Game over", resWin: "THE BROTHERHOOD WINS", spyWin: "THE QING WINS",

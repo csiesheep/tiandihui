@@ -15,29 +15,32 @@
 <meta name="description" content="The rules of Tiandihui Brotherhood, a 5–10 player social deduction game: sworn brothers and Qing informers, team votes, missions, the two-fail rule, and how each side wins. English and 繁體中文.">
 <link rel="canonical" href="https://games.csiesheep.com/tiandihui/rules">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0e1116">
+<meta name="theme-color" content="#ece2cb">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=LXGW+WenKai+TC:wght@400;700&display=swap">
 <link rel="stylesheet" href="style.css">
 <style>
   .rules { width: 100%; max-width: 640px; padding: 14px 20px 48px; display: flex; flex-direction: column; gap: 10px; }
-  .rules h1 { font-family: var(--disp); font-weight: 800; font-size: 40px; line-height: 1; text-transform: uppercase; margin: 10px 0 0; }
-  .rules h2 { font-family: var(--disp); font-weight: 700; font-size: 22px; text-transform: uppercase; letter-spacing: .03em; margin: 22px 0 2px; color: var(--gold); }
-  .rules p, .rules li { max-width: 62ch; margin: 0; font-size: 15px; line-height: 1.55; }
+  .rules h1 { font-family: var(--disp); font-weight: 700; font-size: 36px; line-height: 1; margin: 10px 0 4px; padding-bottom: 12px; border-bottom: 1px solid var(--ink); }
+  .rules h2 { font-family: var(--disp); font-weight: 700; font-size: 22px; line-height: 1; margin: 22px 0 4px; color: var(--red-d); display: flex; align-items: center; gap: 10px; }
+  .rules h2::before { content: ""; width: 8px; height: 20px; background: var(--red); flex: 0 0 auto; }
+  .rules p, .rules li { max-width: 62ch; margin: 0; font-size: 14.5px; line-height: 1.75; color: #4a3f35; }
+  .rules b { color: var(--ink); font-weight: 600; }
   .rules ol, .rules ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
-  .rules table { border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
-  .rules th, .rules td { padding: 5px 10px; border-bottom: 1px solid var(--line); text-align: center; }
-  .rules th { font: 600 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+  .rules li::marker { color: var(--red-d); font-weight: 600; }
+  .rules table { border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; border-top: 1px solid var(--ink); }
+  .rules th, .rules td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: center; }
+  .rules th { font: 400 10px var(--body); letter-spacing: .14em; color: var(--faint); border-bottom-color: var(--line-s); }
   .rules td:first-child, .rules th:first-child { text-align: left; }
   .rules .wide { overflow-x: auto; }
   .zh { display: none; }
   html[lang="zh-Hant"] .en { display: none; }
   html[lang="zh-Hant"] .zh { display: inline; }
   html[lang="zh-Hant"] .rules > .zh { display: block; }
-  .rules b.blue { color: var(--blue); } .rules b.red { color: var(--red); }
-  .rules .foot { margin-top: 24px; }
+  .rules b.blue { color: var(--red-d); } .rules b.red { color: var(--gold-d); }
+  .rules .foot { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 12px; }
 </style>
 </head>
 <body>

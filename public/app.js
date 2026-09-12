@@ -37,8 +37,7 @@ function setLang(l) {
   store.set("tr.lang", lang);
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = t(el.dataset.t); });
-  const [a, b, c] = S.titleParts;
-  $("hero").innerHTML = `${esc(a)}<br>${esc(b)}<span class="red">${esc(c)}</span>`;
+  $("hero").textContent = S.title;
   $("landName").placeholder = t("setup.defaultName");
   $("lbChat").placeholder = t("table.say"); $("chatIn").placeholder = t("table.say");
   $("tableLeave").textContent = t("lobby.leave");
@@ -58,7 +57,7 @@ const setup = {
 };
 function renderSetup() {
   const n = setup.n;
-  $("pCount").textContent = n;
+  $("pCount").textContent = num(n);
   $("pMinus").disabled = n <= E.MIN_PLAYERS;
   $("pPlus").disabled = n >= E.MAX_PLAYERS;
   $("setupSub").textContent = t("setup.sub", { bots: n - 1 });
@@ -96,6 +95,8 @@ const curView = () => (game.mode === "solo" ? (game.st ? E.view(game.st, game.me
 const nameOf = (seat) => game.names[seat] ?? game.lobby?.seats?.[seat]?.name ?? "?";
 const talkCtx = () => ({ rng: game.rng, names: game.names, T: S.talk, sep: lang === "en" ? ", " : "、", and: lang === "en" ? " and " : "和" });
 const nameList = (seats) => seats.map(nameOf).join(lang === "en" ? ", " : "、");
+// Round and mission numbers: 一二三 in Chinese, digits otherwise.
+const num = (n) => (S.nums && S.nums[n - 1]) || String(n);
 
 // The Hour deck.
 const hourName = (c) => t("hour.names." + c);
@@ -193,7 +194,7 @@ function afterStep() {
       ? ev.cards.map((c) => ({ fail: !c.success, seat: c.seat }))
       : E.shuffle(game.rng, ev.team.map((_, i) => ({ fail: i < ev.fails })));
     const outcome = ev.success ? t("table.missionSuccess").toLowerCase() : t("table.missionFailed").toLowerCase();
-    addSys(t("sys.missionResult", { n: ev.mission + 1, outcome, fails: failsText(ev.fails, ev.team.length) }), !ev.success);
+    addSys(t("sys.missionResult", { n: num(ev.mission + 1), outcome, fails: failsText(ev.fails, ev.team.length) }), !ev.success);
     if (ev.cards) addSys(signedLine(ev), ev.fails > 0);
     if (ev.hour === "orders" && ev.success) addSys(t("hour.ordersClean", { team: nameList(ev.team) }));
     render();
@@ -310,7 +311,7 @@ function renderLobby() {
     else if (!s.connected) tags.push(`<span class="tag off">${esc(t("lobby.away"))}</span>`);
     else if (s.idx !== 0) tags.push(`<span class="tag ${s.ready ? "ok" : ""}">${esc(s.ready ? t("lobby.ready") : t("lobby.notReady"))}</span>`);
     if (host && s.ai && L.phase === "lobby") tags.push(`<button type="button" class="tag x" data-remove="${s.idx}">${esc(t("lobby.remove"))}</button>`);
-    return `<div class="li"><span class="av ${s.ai ? "bot" : ""}">${esc([...s.name][0] || "?")}</span><span class="nm">${esc(s.name)}${s.idx === game.me ? ` <small class="muted">· ${esc(t("lobby.you"))}</small>` : ""}</span>${tags.join("")}</div>`;
+    return `<div class="li"><span class="no">${num(s.idx + 1)}</span><span class="av ${s.ai ? "bot" : ""}">${esc([...s.name][0] || "?")}</span><span class="nm">${esc(s.name)}${s.idx === game.me ? ` <small class="muted">· ${esc(t("lobby.you"))}</small>` : ""}</span>${tags.join("")}</div>`;
   }).join("") + (host && L.phase === "lobby" && L.seats.length < E.MAX_PLAYERS ? `<button type="button" class="li empty" id="lbAdd">${esc(t("lobby.addBot"))}</button>` : "");
   $("lbSeats").querySelectorAll("[data-remove]").forEach((b) => b.addEventListener("click", () => send({ type: "removeBot", idx: Number(b.dataset.remove) })));
   const add = $("lbAdd"); if (add) add.addEventListener("click", () => send({ type: "addBot" }));
@@ -379,7 +380,7 @@ function render() {
 }
 function fmtClock(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 function renderBar(v) {
-  const left = v.phase === "over" ? t("over.title") : `${t("table.round", { n: Math.max(1, v.rounds.length) })} · ${t("table.mission", { n: Math.min(v.mission + 1, E.MISSIONS) })}`;
+  const left = v.phase === "over" ? t("over.title") : `${t("table.round", { n: num(Math.max(1, v.rounds.length)) })} · ${t("table.mission", { n: num(Math.min(v.mission + 1, E.MISSIONS)) })}`;
   $("barLeft").textContent = left;
   const lead = v.leader === game.me ? t("table.youLead") : t("table.leads", { name: nameOf(v.leader) });
   const clock = game.mode === "net" && game.deadline && !game.stage && v.phase !== "over" ? ` <span class="t ${game.deadline - Date.now() < 10_000 ? "red" : ""}">${fmtClock(game.deadline - Date.now())}</span>` : "";
@@ -394,7 +395,9 @@ function renderTrack(v) {
     const two = E.failsNeeded(v.n, i) === 2 ? " ✕✕" : "";
     // Travel Light shows on the current mission's size.
     const shown = live && i === v.mission && v.teamSize != null ? v.teamSize : size;
-    return `<div class="m ${cls}${shown !== size ? " light" : ""}">${i + 1}<i>${shown}${two}</i></div>`;
+    // A finished mission is a seal: 成 or 敗.
+    const face = r ? esc(t(r.success ? "table.sealOk" : "table.sealNo")) : num(i + 1);
+    return `<div class="m ${cls}${shown !== size ? " light" : ""}">${face}<i>${shown}${two}</i></div>`;
   }).join("");
 }
 function renderVoteTrack(v) {
@@ -438,7 +441,7 @@ function renderRing(v) {
     if (recused) cls.push("recused");
     if (proposing && !hurt && !recused) cls.push("tappable");
     let badge = "";
-    if (votes) badge = `<span class="v ${votes[i] ? "y" : "n"}">${votes[i] ? "✓" : "✕"}</span>`;
+    if (votes) badge = `<span class="v ${votes[i] ? "y" : "n"}">${esc(t(votes[i] ? "table.yesMark" : "table.noMark"))}</span>`;
     else if (v.phase === "vote" && v.voted && !game.stage) badge = `<span class="done ${v.voted[i] ? "on" : ""}"></span>`;
     else if (v.phase === "mission" && v.played && team.includes(i) && !game.stage) badge = `<span class="done ${v.played[team.indexOf(i)] ? "on" : ""}"></span>`;
     const isBot = game.mode === "solo" ? i !== me : !!game.lobby?.seats?.[i]?.ai;
@@ -467,7 +470,7 @@ function centerHtml(v) {
   if (v.phase === "reveal") return "";
   if (v.phase === "propose") {
     if (v.leader === me) return `<span class="k">${esc(t("table.pick"))}</span><div class="big">${game.picks.size}<span class="dimmed">/${v.teamSize}</span></div><span class="sub">${esc(t("table.tapSeats"))}</span>`;
-    return `<span class="k">${esc(t("table.mission", { n: v.mission + 1 }))}</span><div class="big dimmed">${v.teamSize}</div><span class="sub">${esc(t("table.choosing", { name: nameOf(v.leader) }))}</span>`;
+    return `<span class="k">${esc(t("table.mission", { n: num(v.mission + 1) }))}</span><div class="big dimmed">${v.teamSize}</div><span class="sub">${esc(t("table.choosing", { name: nameOf(v.leader) }))}</span>`;
   }
   if (v.phase === "vote") {
     const done = v.voted.filter(Boolean).length;
@@ -475,7 +478,7 @@ function centerHtml(v) {
   }
   if (v.phase === "mission") {
     const done = v.played.filter(Boolean).length;
-    return `<span class="k">${esc(t("table.mission", { n: v.mission + 1 }))}</span><div class="big mid">${esc(nameList(v.proposal).replace(/, |、/g, " · "))}</div><span class="sub">${esc(t("table.agentsChoosing", { n: v.proposal.length - done }))}</span>`;
+    return `<span class="k">${esc(t("table.mission", { n: num(v.mission + 1) }))}</span><div class="big mid">${esc(nameList(v.proposal).replace(/, |、/g, " · "))}</div><span class="sub">${esc(t("table.agentsChoosing", { n: v.proposal.length - done }))}</span>`;
   }
   if (v.phase === "over") {
     const spyWin = v.winner === E.SPY;
@@ -558,7 +561,7 @@ function overHtml(v) {
     const voteStr = p ? `${p.votes.filter(Boolean).length}–${p.votes.length - p.votes.filter(Boolean).length}${r.proposals.length > 1 ? ` (×${r.proposals.length})` : ""}` : "";
     const res = r.result ? `<span class="dot ${r.result.success ? "ok" : "no"}"></span>${esc(t(r.result.fails === 1 ? "over.fails" : "over.failsPlural", { n: r.result.fails }))}` : "";
     const hourTag = r.hour ? `<br><small class="hour-tag">${esc(hourName(r.hour))}</small>` : "";
-    return `<tr><td>${r.mission + 1}${hourTag}</td><td>${esc(teamStr)}</td><td>${voteStr}</td><td>${res}</td></tr>`;
+    return `<tr><td>${num(r.mission + 1)}${hourTag}</td><td>${esc(teamStr)}</td><td>${voteStr}</td><td>${res}</td></tr>`;
   }).join("");
   const you = me === null ? "" : `${esc(t("over.youWere", { role: mine ? t("roles.spy") : t("roles.resistance") }))} ${esc(won ? t("over.youWon") : t("over.youLost"))}`;
   const again = game.mode === "solo" || game.me === 0
@@ -579,8 +582,8 @@ function renderOverlay(v) {
   ov.hidden = false;
   ov.innerHTML = `<div class="sheet">
     <div id="roleCard" class="card-role ${game.peeked ? (spy ? "spy" : "res") : "hidden-role"}">
-      ${game.peeked ? `<span class="k">${esc(t("reveal.yourCard"))}</span><span class="role">${esc(spy ? t("reveal.spy") : t("reveal.res"))}</span><p>${esc(spy ? t("reveal.spyText") : t("reveal.resText"))}</p>`
-        + (spy ? (mates ? `<span class="k" style="margin-top:8px">${esc(t("reveal.others"))}</span><div class="mates">${mates.map((s) => `<div><span class="av">${esc([...nameOf(s)][0])}</span>${esc(nameOf(s))}</div>`).join("")}</div>` : `<p class="muted">${esc(t("reveal.blind"))}</p>`) : "")
+      ${game.peeked ? `<span class="band">${esc(spy ? t("roles.spySide") : t("roles.resistanceSide"))}</span><span class="k">${esc(t("reveal.yourCard"))}</span><span class="role">${esc(spy ? t("reveal.spy") : t("reveal.res"))}</span><p>${esc(spy ? t("reveal.spyText") : t("reveal.resText"))}</p><span class="stamp">${esc(t(spy ? "reveal.stampSpy" : "reveal.stampRes"))}</span>`
+        + (spy ? (mates ? `<span class="rule"></span><span class="k">${esc(t("reveal.others"))}</span><div class="mates">${mates.map((s) => `<div><span class="av">${esc([...nameOf(s)][0])}</span>${esc(nameOf(s))}</div>`).join("")}</div>` : `<p class="muted">${esc(t("reveal.blind"))}</p>`) : "")
         : `<span class="k">${esc(t("reveal.yourCard"))}</span><span class="role" style="color:var(--mute)">?</span>`}
     </div>
     <button type="button" id="btnPeek" class="btn">${esc(game.peeked ? t("reveal.release") : t("reveal.hold"))}</button>
