@@ -5,7 +5,7 @@ export default {
   lang: "en",
   title: "Tiandihui Brotherhood",
   heroTag: "Sworn in blood",
-  tagline: "Five to ten of you swear the oath. Two, three or four serve the Qing court. Carry three missions through before they wreck three.",
+  tagline: "Sworn in blood to bring down the Qing. Three missions will do it, if the informers among us don't wreck them first.",
   credit: "A free fan project, not affiliated with any publisher. The play is inspired by The Resistance, a social deduction game designed by Don Eskridge.",
   nav: { back: "Back", rules: "How to play", hub: "csiesheep games", lang: "中文", solo: "solo" },
   landing: { play: "Play vs bots", create: "Create a room", join: "Join", code: "Room code", soon: "Rooms need a name: type yours below, then create or join.", badCode: "Enter the four-letter room code.", name: "Your name",
