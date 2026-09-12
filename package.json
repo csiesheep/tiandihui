@@ -1,7 +1,7 @@
 {
-  "name": "the_resistance",
+  "name": "tiandihui",
   "version": "0.1.0",
-  "description": "The Resistance in the browser: solo against AI bots, or online rooms with friends. Fan-made, unofficial. Cloudflare Worker + Durable Objects.",
+  "description": "Tiandihui Brotherhood: a social deduction game of sworn brothers and Qing informers. Solo against AI, or online rooms with friends. Cloudflare Worker + Durable Objects.",
   "type": "module",
   "private": true,
   "scripts": {

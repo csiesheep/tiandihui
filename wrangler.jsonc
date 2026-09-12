@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "the-resistance",
+  "name": "tiandihui",
   "compatibility_date": "2026-09-11",
   "main": "src/index.js",
   "observability": {
@@ -8,12 +8,12 @@
   },
   // Attached to the shared hostname by path-scoped Routes, NOT a Custom Domain
   // — the `games` hub Worker holds that. Cloudflare matches the most-specific
-  // route first, so these peel /the_resistance off the hub.
+  // route first, so these peel /tiandihui off the hub.
   // Two patterns: `/*` does not match the bare prefix, and the bare prefix is
   // what src/index.js redirects to the trailing-slash form.
   "routes": [
-    { "pattern": "games.csiesheep.com/the_resistance", "zone_name": "csiesheep.com" },
-    { "pattern": "games.csiesheep.com/the_resistance/*", "zone_name": "csiesheep.com" }
+    { "pattern": "games.csiesheep.com/tiandihui", "zone_name": "csiesheep.com" },
+    { "pattern": "games.csiesheep.com/tiandihui/*", "zone_name": "csiesheep.com" }
   ],
   // Only public/ is uploaded as static assets; src/ is bundled into the Worker.
   "assets": {

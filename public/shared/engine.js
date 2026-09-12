@@ -1,4 +1,4 @@
-// The rules of The Resistance, and nothing else. Pure functions over a plain
+// The rules of the game, and nothing else. Pure functions over a plain
 // state object; no DOM, no network, no timers. Used unchanged by the browser
 // (solo mode) and by the room Durable Object (multiplayer), which is why the
 // per-seat `view()` lives here too: whoever holds the full state must never

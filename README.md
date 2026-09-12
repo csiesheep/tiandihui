@@ -1,26 +1,26 @@
-# The Resistance
+# Tiandihui Brotherhood 天地會
 
-A browser version of *The Resistance*, the 5–10 player social-deduction game by Don Eskridge (Indie Boards & Cards). Play solo against AI bots, or open an online room and share a four-letter code with friends; bots fill any empty seats. English and traditional Chinese.
+A browser social-deduction game for 5 to 10 players. You meet in a back hall and swear the oath; two to four of you have already sold it to the Qing court. Over five missions the brotherhood tries to carry three through and the informers try to wreck three. Play solo against AI, or open an online room and share a four-letter code with friends; bots fill any empty seats. English and traditional Chinese.
 
-Fan-made and unofficial. Own art and prose; the rules are the game's own.
+A free fan project, not affiliated with any publisher. All art and prose are our own. The play is inspired by *The Resistance*, a social deduction game designed by Don Eskridge; game rules and mechanics are not copyrightable, and this is a clean-room implementation under its own name and setting.
 
-Live at https://games.csiesheep.com/the_resistance/ — solo against bots, or a room with friends.
+Live at https://games.csiesheep.com/tiandihui/ — solo against bots, or a room with friends.
 
 ## How it works
 
 Everything runs on Cloudflare as one Worker, the same shape as [Dice Wars](https://github.com/csiesheep/dice_war):
 
 - `public/` is the client: landing, setup, lobby and the table view, served as static assets. `public/shared/engine.js` holds all rules (tables, phase machine, per-seat view projection), `public/shared/bots.js` the AI and `public/shared/talk.js` the bots' table talk, all used unchanged by both the browser and the server. Every player-visible string is in `public/i18n/`.
-- `src/index.js` is the Worker: the path-prefix router that serves `/the_resistance/…` plus the WebSocket entry point at `/the_resistance/ws`.
+- `src/index.js` is the Worker: the path-prefix router that serves `/tiandihui/…` plus the WebSocket entry point at `/tiandihui/ws`.
 - `src/room.js` is a Durable Object, one per room, named by its code. It is authoritative: it deals the roles, applies every action through the engine, keeps the phase clock, runs the bot seats, and sends each seat only `view(state, seat)` — never the state. Connections use the WebSocket Hibernation API; all timers are the object's single alarm.
 
 Rules of the table: 30 s to read your card, 90 s to propose, 30 s to vote, 30 s to play a card; when time runs out the table decides for whoever has not acted. A player who drops is played by a bot after 15 s and gets the seat back by reopening the link in the same tab. A player who leaves mid-game becomes a bot. The host can add bots to fill seats, and a room nobody is connected to is deleted after 30 minutes. The room's language is the host's when it was created; it governs bot talk and the table log.
 
 URLs are query strings on the page so the same build works at any prefix:
 
-- `/the_resistance/` landing
-- `/the_resistance/?play` single player
-- `/the_resistance/?room=ABCD` an online room
+- `/tiandihui/` landing
+- `/tiandihui/?play` single player
+- `/tiandihui/?room=ABCD` an online room
 
 ## Milestones
 
@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:8787/the_resistance/.
+Then open http://localhost:8787/tiandihui/.
 
 ```bash
 npm test          # engine and bot tests
@@ -53,4 +53,4 @@ The harness runs each cell in a child process with retries: Node 24 on the devel
 npm run deploy
 ```
 
-Deploys from a logged-in `wrangler`. The routes in `wrangler.jsonc` attach the Worker to `games.csiesheep.com/the_resistance` and `/the_resistance/*`; the `games` hub Worker keeps the hostname itself. Pushes to `main` do not deploy on their own unless the repo is connected under Workers & Pages in the Cloudflare dashboard, as the sibling games are.
+Deploys from a logged-in `wrangler`. The routes in `wrangler.jsonc` attach the Worker to `games.csiesheep.com/tiandihui` and `/tiandihui/*`; the `games` hub Worker keeps the hostname itself. Pushes to `main` do not deploy on their own unless the repo is connected under Workers & Pages in the Cloudflare dashboard, as the sibling games are.
