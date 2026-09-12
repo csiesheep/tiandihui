@@ -62,7 +62,7 @@ a { color: var(--red-d); }
 .hero-tag { font-size: 13px; letter-spacing: .32em; color: var(--mute); }
 html[lang="zh-Hant"] .hero { font-size: 84px; line-height: 1; letter-spacing: .06em; }
 html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30px; }
-.tag-line { color: #4a3f35; font-size: 14.5px; line-height: 1.8; margin: 0; max-width: 32ch; }
+.tag-line { color: #4a3f35; font-size: 14.5px; line-height: 1.8; margin: 0; }
 
 /* controls */
 .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px 14px; font-family: var(--body); font-weight: 600; font-size: 17px; letter-spacing: .24em; text-indent: .24em; border: 1.5px solid var(--ink); color: var(--ink); background: transparent; text-decoration: none; transition: transform .08s ease, opacity .2s; }
@@ -120,6 +120,13 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 .seat.spy .av::after { content: "清"; position: absolute; right: -9px; bottom: -5px; width: 16px; height: 16px; background: var(--gold); color: var(--ink); font-size: 9px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
 .seat.lead .av::before { content: "令"; position: absolute; top: -13px; left: 50%; width: 18px; height: 18px; margin-left: -9px; background: var(--red); color: var(--paper); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; transform: rotate(-8deg); z-index: 1; }
 .seat.dim .av { opacity: .5; }
+/* Game over: the winners glow in their side's colour, the losers fade. */
+.seat.win .av { opacity: 1; }
+.seat.win-res .av { border-color: var(--red); box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--red), 0 0 24px 8px rgba(181, 50, 42, .55); }
+.seat.win-spy .av { border-color: var(--gold); box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--gold), 0 0 24px 8px rgba(201, 150, 43, .65); }
+.seat.win .nm { color: var(--ink); font-weight: 600; }
+.seat.win-res .nm { color: var(--red-d); } .seat.win-spy .nm { color: var(--gold-d); }
+.seat.win.dim .nm { color: var(--faint); }
 .seat.dim .nm { color: var(--faint); }
 .seat .nm { font-size: 11px; color: var(--ink); white-space: nowrap; max-width: 76px; overflow: hidden; text-overflow: ellipsis; }
 .seat.you .nm { color: var(--red-d); font-weight: 600; }
@@ -205,7 +212,11 @@ table.h td { padding: 7px 4px; border-bottom: 1px solid var(--line); color: var(
 .result-head .sub { font-size: 13.5px; color: var(--ink); display: block; }
 
 @media (prefers-reduced-motion: reduce) { .flip .card { transition: none; } }
-@media (prefers-reduced-motion: no-preference) { .m.cur { animation: pulse 2.4s ease-in-out infinite; } @keyframes pulse { 50% { box-shadow: 0 0 0 4px var(--paper), 0 0 0 5px rgba(138, 42, 34, .08); } } }
+@media (prefers-reduced-motion: no-preference) {
+  .m.cur { animation: pulse 2.4s ease-in-out infinite; } @keyframes pulse { 50% { box-shadow: 0 0 0 4px var(--paper), 0 0 0 5px rgba(138, 42, 34, .08); } }
+  .seat.win-res .av { animation: glow-res 2.2s ease-in-out infinite; } @keyframes glow-res { 50% { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--red), 0 0 10px 2px rgba(181, 50, 42, .35); } }
+  .seat.win-spy .av { animation: glow-spy 2.2s ease-in-out infinite; } @keyframes glow-spy { 50% { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--gold), 0 0 10px 2px rgba(201, 150, 43, .4); } }
+}
 
 /* lobby: the code in a double frame, the seats as a ledger */
 .codebox { display: flex; flex-direction: column; align-items: center; gap: 6px; border: 1.5px solid var(--ink); box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px var(--ink); padding: 16px 12px 14px; }

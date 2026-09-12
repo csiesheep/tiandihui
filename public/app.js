@@ -434,8 +434,13 @@ function renderRing(v) {
     if (i === v.leader && v.phase !== "over") cls.push("lead");
     if (team.includes(i)) cls.push("team");
     if (proposing && game.picks.has(i)) cls.push("pick");
-    // A spy sees every spy in red, themself included; operatives see nothing.
+    // A spy sees every spy marked, themself included; operatives see nothing.
+    // Once the game is over everyone is revealed, and the winning side glows.
     if ((mySpies.includes(i) || (v.role === E.SPY && i === me)) && v.phase !== "over") cls.push("spy");
+    if (v.phase === "over" && v.roles) {
+      if (v.roles[i] === E.SPY) cls.push("spy");
+      if (v.roles[i] === v.winner) cls.push("win", v.winner === E.SPY ? "win-spy" : "win-res"); else cls.push("dim");
+    }
     if ((v.phase === "vote" || v.phase === "mission") && team.length && !team.includes(i) && !game.stage) cls.push("dim");
     if (hurt) cls.push("hurt");
     if (recused) cls.push("recused");
