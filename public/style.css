@@ -182,3 +182,20 @@ table.h td { padding: 5px 6px; border-bottom: 1px solid var(--line); color: var(
 .chat .btn.sm { flex: 0 0 44px; }
 .note.err { color: var(--red); }
 #lbLog { max-height: 120px; }
+
+/* the Hour deck (天時): this round's card sits between the tracks and the ring */
+.hour { display: grid; grid-template-columns: auto 1fr auto; column-gap: 10px; row-gap: 3px; align-items: baseline; background: var(--g2); border: 1px solid var(--gold-d); border-radius: 8px; padding: 8px 12px; }
+.hour .k { font: 600 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); border: 1px solid var(--gold-d); border-radius: 3px; padding: 1px 5px; align-self: center; }
+.hour b { font-family: var(--disp); font-weight: 700; font-size: 20px; line-height: 1; color: var(--gold); letter-spacing: .03em; }
+.hour .left { font: 500 10.5px var(--mono); color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hour .d { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink); }
+.hour.h-quiet { border-color: var(--line); }
+.hour.h-quiet b, .hour.h-quiet .k { color: var(--mute); border-color: var(--line); }
+.m.light i { color: var(--gold); }
+.seat.hurt .av { border-style: dashed; opacity: .45; }
+.seat .hurt-tag { font: 600 9px var(--mono); color: var(--gold); letter-spacing: .08em; text-transform: uppercase; line-height: 1; }
+.flip .face { flex-direction: column; gap: 4px; }
+.flip .face .who { font: 500 10.5px var(--body); letter-spacing: 0; color: var(--ink); max-width: 66px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log .sys.hourline { color: var(--gold); }
+table.h .hour-tag { font: 500 10px var(--body); color: var(--gold); white-space: nowrap; }
+.chat input:disabled, .chat .btn:disabled { opacity: .45; }

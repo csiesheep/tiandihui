@@ -12,6 +12,10 @@
 // that carry a spy and reject clean ones). Everything the bot does derives
 // from the marginal P(spy) per seat and P(fail) per candidate team.
 //
+// The Hour deck feeds the same model: a signed result names the seats that
+// failed outright, and a result under orders gives the exact number of spies
+// on the team, because none of them could play Success.
+//
 // Every decision also carries a `why`, so the table-talk module can say
 // something true about it.
 
@@ -113,12 +117,22 @@ export function posterior(view, { knownClean = null, voteWeight = 0.5, fog = 0 }
       }
     });
     if (round.result) {
-      const teamMask = maskOf(round.result.team);
-      const fails = round.result.fails;
-      for (const h of sets) {
-        const k = popcount(h.mask & teamMask);
-        if (fails > k) { h.w *= fog; continue; }
-        h.w *= binom(k, fails) * Math.pow(rate, fails) * Math.pow(1 - rate, k - fails);
+      const r = round.result;
+      const teamMask = maskOf(r.team);
+      if (r.cards) {
+        // Signed: every seat that played Fail was seen doing it. No fog; this
+        // is not an inference anybody can talk themselves out of.
+        const failMask = maskOf(r.cards.filter((c) => !c.success).map((c) => c.seat));
+        for (const h of sets) if ((h.mask & failMask) !== failMask) h.w = 0;
+      } else if (round.hour === "orders") {
+        // Under orders no spy on the team could play Success: the count is exact.
+        for (const h of sets) if (popcount(h.mask & teamMask) !== r.fails) h.w *= fog;
+      } else {
+        for (const h of sets) {
+          const k = popcount(h.mask & teamMask);
+          if (r.fails > k) { h.w *= fog; continue; }
+          h.w *= binom(k, r.fails) * Math.pow(rate, r.fails) * Math.pow(1 - rate, k - r.fails);
+        }
       }
     }
   }
@@ -148,12 +162,16 @@ const sortNum = (a) => a.slice().sort((x, y) => x - y);
 // The operative's approval rule: a team is fine if it is not much worse than
 // the best team this seat could propose. The vote track loosens it.
 const wouldApprove = (pf, bestPf, view, lv) => pf <= bestPf + lv.slack + 0.08 * view.rejects;
-// Best team including `me`, by P(fail), under a posterior.
-function bestTeamWith(sets, me, n, k, need) {
-  const others = [...Array(n).keys()].filter((s) => s !== me);
+// Every legal team of size k that includes `me` when it can. Nobody may take
+// the seat that is laid up this round, including `me`.
+function teamsFor(view, me, k) {
+  const others = [...Array(view.n).keys()].filter((s) => s !== me && s !== view.wounded);
+  return view.wounded === me ? combos(others, k) : combos(others, k - 1).map((rest) => sortNum([me, ...rest]));
+}
+// Best team for `me`, by P(fail), under a posterior.
+function bestTeamWith(sets, view, me, k, need) {
   let best = null;
-  for (const rest of combos(others, k - 1)) {
-    const team = sortNum([me, ...rest]);
+  for (const team of teamsFor(view, me, k)) {
     const pf = pFail(sets, team, need);
     if (!best || pf < best.pf) best = { team, pf };
   }
@@ -161,34 +179,32 @@ function bestTeamWith(sets, me, n, k, need) {
 }
 const topSuspects = (m, exclude, count = 2) =>
   [...m.keys()].filter((s) => !exclude.includes(s)).sort((a, b) => m[b] - m[a]).slice(0, count);
+// A signed team is safe unless the spies need only one more fail: short of
+// that, no spy will name themself by failing it.
+const signedSafe = (view) => view.hour === "signed" && view.score[SPY] < E.WINS_NEEDED - 1;
 
 function resistanceDecision(view, lv, rng) {
   const me = view.seat;
   const sets = posterior(view, { knownClean: me, voteWeight: lv.voteWeight, fog: lv.fog });
   const m = marginals(sets, view.n);
-  const others = [...Array(view.n).keys()].filter((s) => s !== me);
   const k = view.teamSize, need = view.failsNeeded;
-  // Every team that includes me, scored by P(fail). I know I am clean, so
-  // any team without me is strictly worse than the same team with me swapped in.
-  const candidates = combos(others, k - 1).map((rest) => {
-    const team = sortNum([me, ...rest]);
-    return { team, pf: pFail(sets, team, need) };
-  }).sort((a, b) => a.pf - b.pf || (a.team.join() < b.team.join() ? -1 : 1));
+  // Every legal team, scored by P(fail). I know I am clean, so a team with me
+  // on it beats the same team with me swapped out, unless I am laid up.
+  const candidates = teamsFor(view, me, k)
+    .map((team) => ({ team, pf: pFail(sets, team, need) }))
+    .sort((a, b) => a.pf - b.pf || (a.team.join() < b.team.join() ? -1 : 1));
   const best = candidates[0];
 
   if (view.phase === "propose") {
-    if (rng.next() < lv.noise) {
-      const pick = candidates[rng.int(Math.min(3, candidates.length))];
-      return { type: "propose", seat: me, team: pick.team, why: { trusted: pick.team.filter((s) => s !== me), pFail: pick.pf, suspects: topSuspects(m, pick.team) } };
-    }
-    return { type: "propose", seat: me, team: best.team, why: { trusted: best.team.filter((s) => s !== me), pFail: best.pf, suspects: topSuspects(m, best.team) } };
+    const pick = rng.next() < lv.noise ? candidates[rng.int(Math.min(3, candidates.length))] : best;
+    return { type: "propose", seat: me, team: pick.team, why: { trusted: pick.team.filter((s) => s !== me), pFail: pick.pf, suspects: topSuspects(m, pick.team) } };
   }
 
   if (view.phase === "vote") {
     const team = view.proposal;
     const pf = pFail(sets, team, need);
     const forced = view.rejects >= E.MAX_REJECTS - 1;
-    let approve = forced || view.leader === me || wouldApprove(pf, best.pf, view, lv);
+    let approve = forced || view.leader === me || signedSafe(view) || wouldApprove(pf, best.pf, view, lv);
     if (!forced && rng.next() < lv.noise) approve = rng.next() < 0.6;
     const worst = team.filter((s) => s !== me).sort((a, b) => m[b] - m[a])[0];
     return { type: "vote", seat: me, approve, why: { forced, pFail: pf, bestPFail: best.pf, onTeam: team.includes(me), suspect: worst, suspectP: m[worst] } };
@@ -209,16 +225,27 @@ function spyDecision(view, lv, rng) {
   const k = view.teamSize, need = view.failsNeeded;
   const score = view.score;
   const decisive = score[SPY] === E.WINS_NEEDED - 1 || score[RESISTANCE] === E.WINS_NEEDED - 1;
+  const lastFail = score[SPY] === E.WINS_NEEDED - 1;
+  const exposed = view.hour === "signed"; // a Fail on this round names whoever played it
 
   if (view.phase === "propose") {
-    // Me plus the most-trusted operatives: exactly one spy, and a team that
-    // reads as a sensible pick. With two fails needed, bring a second spy.
-    const spiesWanted = Math.min(need, spies.length, k);
-    const otherSpies = spies.filter((s) => s !== me).sort((a, b) => m[a] - m[b]).slice(0, spiesWanted - 1);
-    const ops = [...Array(n).keys()].filter((s) => !isSpy(s)).sort((a, b) => m[a] - m[b]);
-    const team = sortNum([me, ...otherSpies, ...ops].slice(0, k));
+    const pool = [...Array(n).keys()].filter((s) => s !== view.wounded);
+    const canSelf = view.wounded !== me;
+    // Me plus the most-trusted operatives: exactly the spies it takes to sink
+    // the mission, and a team that reads as a sensible pick. On a signed round
+    // a fail names its player, so the team just looks clean.
+    const spiesWanted = exposed && !lastFail ? (canSelf ? 1 : 0) : Math.min(need, spies.length, k);
+    const otherSpies = spies.filter((s) => s !== me && s !== view.wounded).sort((a, b) => m[a] - m[b])
+      .slice(0, Math.max(0, spiesWanted - (canSelf ? 1 : 0)));
+    const ops = pool.filter((s) => !isSpy(s)).sort((a, b) => m[a] - m[b]);
+    const fill = (first) => {
+      const out = [...new Set(first)];
+      for (const s of pool) { if (out.length >= k) break; if (!out.includes(s)) out.push(s); }
+      return sortNum(out.slice(0, k));
+    };
+    const team = fill([...(canSelf ? [me] : []), ...otherSpies, ...ops]);
     if (rng.next() < lv.noise) {
-      const rnd = sortNum(E.shuffle(rng, [...Array(n).keys()].filter((s) => s !== me)).slice(0, k - 1).concat(me));
+      const rnd = fill([...(canSelf ? [me] : []), ...E.shuffle(rng, pool.filter((s) => s !== me))]);
       return { type: "propose", seat: me, team: rnd, why: { trusted: rnd.filter((s) => s !== me), suspects: topSuspects(m, rnd) } };
     }
     return { type: "propose", seat: me, team, why: { trusted: team.filter((s) => s !== me), suspects: topSuspects(m, team) } };
@@ -227,7 +254,7 @@ function spyDecision(view, lv, rng) {
   if (view.phase === "vote") {
     const team = view.proposal;
     const spiesOn = team.filter(isSpy).length;
-    const canSink = spiesOn >= need;
+    const canSink = spiesOn >= need && (!exposed || lastFail);
     let approve;
     if (view.rejects >= E.MAX_REJECTS - 1) approve = false;          // the fifth rejection wins
     else if (decisive) approve = canSink;                              // this vote decides the game
@@ -235,8 +262,8 @@ function spyDecision(view, lv, rng) {
     else if (rng.next() < lv.spyMimic) {
       // Vote as an operative in this seat would, from the outsider posterior
       // (which does not know I am a spy), so my votes carry no signal.
-      const outsiderBest = bestTeamWith(sets, me, n, k, need);
-      approve = wouldApprove(pFail(sets, team, need), outsiderBest.pf, view, lv);
+      const outsiderBest = bestTeamWith(sets, view, me, k, need);
+      approve = signedSafe(view) || wouldApprove(pFail(sets, team, need), outsiderBest.pf, view, lv);
     }
     else if (canSink) approve = rng.next() < 0.85;
     else if (view.mission === 0) approve = rng.next() < 0.8;           // cover on mission 1
@@ -249,6 +276,13 @@ function spyDecision(view, lv, rng) {
   if (view.phase === "mission") {
     const team = view.proposal;
     const spiesOn = team.filter(isSpy);
+    // Orders leave no choice: the engine would refuse a Success.
+    if (view.hour === "orders") return { type: "play", seat: me, success: false };
+    if (exposed) {
+      // A signed Fail names the one who played it. Only worth it if it ends the game.
+      const wins = lastFail && (view.spies ? spiesOn.length >= need && spiesOn.slice(0, need).includes(me) : need === 1);
+      return { type: "play", seat: me, success: !wins };
+    }
     if (!view.spies) {
       // Blind: cannot coordinate. Fail unless it is clearly wasted.
       return { type: "play", seat: me, success: need > 1 && rng.next() < 0.5 };

@@ -181,3 +181,47 @@ test("bots at every level finish games without ever losing on the vote track mor
     }
   }
 });
+
+// ---------- the Hour deck (天時) ----------
+function openOn(n, card) {
+  for (let seed = 0; seed < 5000; seed++) {
+    const st = ready(E.createGame(seed, n, { hours: true }));
+    if (st.hour === card) return st;
+  }
+  throw new Error(`no seed opens on ${card}`);
+}
+
+test("bots play whole legal games with the Hour deck at every level and player count", () => {
+  for (let n = 5; n <= 10; n++) {
+    for (const lvl of B.LEVELS) {
+      for (let g = 0; g < 8; g++) assert.equal(playGame(n * 131 + g, n, lvl, lvl, { hours: true }).phase, "over");
+    }
+  }
+});
+
+test("under orders a spy bot plays Fail; on a signed round it plays Success unless that fail wins", () => {
+  let st = openOn(7, "orders");
+  let spy = E.spiesOf(st)[0], op = st.roles.indexOf(RESISTANCE);
+  st = voteAll(propose(st, [spy, op]), () => true);
+  for (const lvl of B.LEVELS) assert.equal(B.decide(E.view(st, spy), lvl, E.makeRng(1)).success, false);
+
+  st = openOn(7, "signed");
+  spy = E.spiesOf(st)[0]; op = st.roles.indexOf(RESISTANCE);
+  st = voteAll(propose(st, [spy, op]), () => true);
+  for (const lvl of B.LEVELS) assert.equal(B.decide(E.view(st, spy), lvl, E.makeRng(2)).success, true);
+});
+
+test("no bot proposes the seat that is laid up, and every proposal has the round's size", () => {
+  let checked = 0;
+  for (let seed = 0; seed < 3000 && checked < 40; seed++) {
+    const st = ready(E.createGame(seed, 7, { hours: true }));
+    if (st.hour !== "wounded") continue;
+    for (const lvl of B.LEVELS) {
+      const a = B.decide(E.view(st, st.leader), lvl, E.makeRng(seed));
+      assert.equal(a.team.includes(st.wounded), false);
+      assert.equal(a.team.length, E.roundTeamSize(st));
+    }
+    checked++;
+  }
+  assert.ok(checked > 10);
+});

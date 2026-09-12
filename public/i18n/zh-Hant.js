@@ -10,7 +10,7 @@ export default {
   setup: {
     title: "你的牌桌", sub: "你和 {bots} 個機器人。", players: "人數", bots: "機器人", name: "你的名字",
     easy: "簡單", normal: "普通", hard: "困難", blind: "盲密探（密探彼此不認識）",
-    start: "發牌", defaultName: "你",
+    start: "發牌", defaultName: "你", hours: "天時牌（每回合抽一張，當回合有效）",
     summary: "{spies} 個密探 · {ops} 個兄弟{twoFail}", twoFail: " · 第 4 次任務要兩張失敗才算失敗",
   },
   lobby: {
@@ -62,6 +62,23 @@ export default {
     joined: "{name} 加入了。", left: "{name} 離開了。", leftGame: "{name} 離開了，這個位子改由機器人代打。",
     timeout: "{name} 太久沒動，桌上替他決定了。",
     over: "{side}獲勝。",
+  },
+  hour: {
+    label: "天時", left: "剩 {n} 張",
+    names: { light: "輕裝", signed: "畫押", orders: "密令", wounded: "掛彩", silence: "封口", quiet: "無事" },
+    desc: {
+      light: "這一趟少帶一個人。",
+      signed: "牌不洗。翻開時，誰出什麼全桌看得見。",
+      orders: "隊上的密探必須出失敗。這趟若成功，全隊清白。",
+      wounded: "{name} 掛了彩，這一趟派不出去。",
+      silence: "這一回合不許說話。",
+      quiet: "今夜無事。",
+    },
+    announce: "天時・{name}：{desc}",
+    signedResult: "畫押：{who} 出了失敗。", signedClean: "畫押：全隊出成功。",
+    ordersClean: "密令之下全隊出成功：{team} 清白。", ordersCleanShort: "密令之下，全隊清白",
+    mustFail: "密令在身，只能出失敗", signedNote: "這一趟畫押，牌不洗。",
+    silenced: "封口：這一回合不許說話", hurt: "掛彩", signedShown: "畫押翻牌",
   },
   names: ["阿七", "石頭", "馬三", "秀娘", "老刀", "阿九", "鐵牛", "小六", "阿龍", "春娘"],
   talk: {

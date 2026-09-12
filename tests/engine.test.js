@@ -400,3 +400,152 @@ test("500 random legal games per player count end with a consistent verdict", ()
     }
   }
 });
+
+// ---------- the Hour deck (天時) ----------
+const hourGame = (n, seed = 1) => ready(E.createGame(seed, n, { hours: true }));
+// The first seed whose opening round draws this card.
+function seedFor(n, card) {
+  for (let seed = 0; seed < 5000; seed++) if (hourGame(n, seed).hour === card) return seed;
+  throw new Error(`no seed opens on ${card} at ${n} players`);
+}
+// A random legal action for whoever must act, respecting the Hour.
+function legalMove(st, rng) {
+  const who = E.mustAct(st);
+  const seat = who[rng.int(who.length)];
+  switch (st.phase) {
+    case "reveal": return { type: "ready", seat };
+    case "propose": {
+      const pool = [...Array(st.n).keys()].filter((s) => s !== st.wounded);
+      return { type: "propose", seat, team: E.shuffle(rng, pool).slice(0, E.roundTeamSize(st)) };
+    }
+    case "vote": return { type: "vote", seat, approve: rng.next() < 0.7 };
+    default: {
+      const spy = st.roles[seat] === SPY;
+      return { type: "play", seat, success: !spy || (st.hour !== "orders" && rng.next() < 0.5) };
+    }
+  }
+}
+
+test("the Hour deck is off unless asked for", () => {
+  const st = start(7, 3);
+  assert.equal(st.hour, null);
+  assert.deepEqual(st.hourDeck, []);
+  assert.equal("hour" in st.rounds[0], false);
+  assert.equal(E.view(st, 0).hour, null);
+});
+
+test("the Hour: one card a round, never repeated, only where allowed, always obeyed", () => {
+  for (let n = 5; n <= 10; n++) {
+    for (let g = 0; g < 150; g++) {
+      const rng = E.makeRng(n * 7919 + g);
+      let st = E.createGame(rng.int(1e9), n, { hours: true });
+      const drawn = [];
+      let steps = 0;
+      while (st.phase !== "over") {
+        assert.ok(++steps < 3000, "game did not terminate");
+        const before = st;
+        st = E.apply(st, legalMove(st, rng));
+        if (st.phase !== "over" && st.rounds.length !== before.rounds.length) {
+          const r = E.currentRound(st);
+          assert.ok(E.HOURS.includes(st.hour), `drew ${st.hour}`);
+          assert.equal(r.hour, st.hour);
+          assert.ok(!drawn.includes(st.hour), `${st.hour} drawn twice`);
+          drawn.push(st.hour);
+          assert.equal(st.hourDeck.length, E.HOURS.length - drawn.length);
+          assert.ok(E.hourAllowed(n, st.mission, st.hour), `${st.hour} not allowed on mission ${st.mission + 1} at ${n}`);
+          assert.equal(st.wounded === null, st.hour !== "wounded");
+          assert.equal(E.roundTeamSize(st), E.teamSize(n, st.mission) - (st.hour === "light" ? 1 : 0));
+        }
+      }
+      for (const r of st.rounds) {
+        for (const p of r.proposals) {
+          assert.equal(p.team.length, E.teamSize(n, r.mission) - (r.hour === "light" ? 1 : 0));
+          if (r.wounded != null) assert.ok(!p.team.includes(r.wounded), "a laid-up seat was proposed");
+        }
+        if (!r.result) continue;
+        const spiesOn = r.result.team.filter((s) => st.roles[s] === SPY).length;
+        if (r.hour === "orders") assert.equal(r.result.fails, spiesOn, "under orders every informer fails");
+        if (r.hour === "signed") {
+          assert.deepEqual(r.result.cards.map((c) => c.seat), r.result.team);
+          assert.equal(r.result.cards.filter((c) => !c.success).length, r.result.fails);
+          for (const c of r.result.cards) if (!c.success) assert.equal(st.roles[c.seat], SPY);
+        } else {
+          assert.equal("cards" in r.result, false, "only a signed round names cards");
+        }
+      }
+    }
+  }
+});
+
+test("Travel Light takes one off the team and is never drawn for a two-seat team", () => {
+  let st = hourGame(8, seedFor(8, "light")); // mission 1 at 8 players is three seats
+  assert.equal(E.roundTeamSize(st), 2);
+  assert.equal(E.view(st, 0).teamSize, 2);
+  assert.throws(() => propose(st, [0, 1, 2]), /team must have 2/);
+  st = propose(st, [0, 1]);
+  assert.equal(st.phase, "vote");
+  // Mission 1 at five players is two seats: Travel Light cannot open a game there.
+  for (let seed = 0; seed < 400; seed++) assert.notEqual(hourGame(5, seed).hour, "light");
+});
+
+test("Laid Up keeps one seat off every proposal this round, and never falls on mission 5", () => {
+  let st = hourGame(7, seedFor(7, "wounded"));
+  const hurt = st.wounded;
+  assert.ok(Number.isInteger(hurt) && hurt >= 0 && hurt < 7);
+  const others = [0, 1, 2, 3, 4, 5, 6].filter((s) => s !== hurt);
+  assert.throws(() => propose(st, [hurt, others[0]]), /laid up/);
+  st = voteAll(propose(st, others.slice(0, 2)), () => false); // rejected: same round, still laid up
+  assert.equal(st.wounded, hurt);
+  assert.throws(() => propose(st, [hurt, others[1]]), /laid up/);
+  assert.equal(E.hourAllowed(7, 4, "wounded"), false);
+  assert.equal(E.hourAllowed(7, 3, "wounded"), true);
+});
+
+test("Orders from Above: an informer on the team cannot play Success", () => {
+  let st = hourGame(7, seedFor(7, "orders"));
+  const spy = E.spiesOf(st)[0];
+  const op = st.roles.indexOf(RESISTANCE);
+  st = voteAll(propose(st, [spy, op]), () => true);
+  assert.throws(() => E.apply(st, { type: "play", seat: spy, success: true }), /must play Fail/);
+  st = E.apply(st, { type: "play", seat: op, success: true });
+  st = E.apply(st, { type: "play", seat: spy, success: false });
+  assert.equal(st.rounds[0].result.success, false);
+  assert.equal(st.event.type, "mission");
+  assert.equal(st.event.hour, "orders");
+});
+
+test("Signed: the result names who played what, in every seat's view, only once all cards are in", () => {
+  let st = hourGame(7, seedFor(7, "signed"));
+  const spy = E.spiesOf(st)[0];
+  const op = st.roles.indexOf(RESISTANCE);
+  st = voteAll(propose(st, [spy, op]), () => true);
+  st = E.apply(st, { type: "play", seat: spy, success: false });
+  assert.equal(E.view(st, op).rounds[0].result, null);
+  assert.equal(E.view(st, op).myCard, null);
+  st = E.apply(st, { type: "play", seat: op, success: true });
+  const expect = [spy, op].sort((a, b) => a - b).map((s) => ({ seat: s, success: s !== spy }));
+  for (let s = 0; s < 7; s++) assert.deepEqual(E.view(st, s).rounds[0].result.cards, expect);
+  assert.deepEqual(st.event.cards, expect);
+});
+
+test("the Hour is public in every view; the deck list is sorted and the rng stays private", () => {
+  const st = hourGame(9, 4);
+  for (let s = 0; s < 9; s++) {
+    const v = E.view(st, s);
+    assert.equal(v.hour, st.hour);
+    assert.equal(v.wounded, st.wounded);
+    assert.deepEqual(v.hourDeck, E.HOURS.filter((c) => st.hourDeck.includes(c)));
+    assert.equal(v.options.hours, true);
+    assert.equal(JSON.stringify(v).includes("rngState"), false);
+  }
+});
+
+test("the Hour replays: the same seed and actions draw the same cards", () => {
+  const run = () => {
+    const rng = E.makeRng(99);
+    let st = E.createGame(1234, 8, { hours: true });
+    while (st.phase !== "over") st = E.apply(st, legalMove(st, rng));
+    return st.rounds.map((r) => [r.hour, r.wounded]);
+  };
+  assert.deepEqual(run(), run());
+});

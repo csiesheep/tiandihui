@@ -62,26 +62,29 @@ import { fileURLToPath } from "node:url";
 
 const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "/").split("/").pop());
 if (isMain && process.argv[2] === "--cell") {
-  const [, , , resLevel, spyLevel, n, games, seed] = process.argv;
-  const o = simulate({ games: Number(games), n: Number(n), resLevel, spyLevel, seed: Number(seed) });
+  const [, , , resLevel, spyLevel, n, games, seed, hours] = process.argv;
+  const o = simulate({ games: Number(games), n: Number(n), resLevel, spyLevel, seed: Number(seed), options: { hours: hours === "1" } });
   process.stdout.write(JSON.stringify(o));
 } else if (isMain) {
-  const games = Number(process.argv[2]) || 400;
-  const only = Number(process.argv[3]) || null;
-  const matchups = process.argv[4]
-    ? [[process.argv[4], process.argv[5] || process.argv[4]]]
+  // --hours runs every cell with the Hour deck on.
+  const HOURS_ON = process.argv.includes("--hours");
+  const argv = process.argv.filter((a) => a !== "--hours");
+  const games = Number(argv[2]) || 400;
+  const only = Number(argv[3]) || null;
+  const matchups = argv[4]
+    ? [[argv[4], argv[5] || argv[4]]]
     : [["easy", "easy"], ["normal", "normal"], ["hard", "hard"], ["normal", "hard"], ["hard", "normal"]];
   const counts = only ? [only] : [5, 6, 7, 8, 9, 10];
   const self = fileURLToPath(import.meta.url);
   const cell = (r, s, n) => {
     for (let attempt = 0; attempt < 4; attempt++) {
-      const res = spawnSync(process.execPath, [self, "--cell", r, s, String(n), String(games), "1"], { encoding: "utf8" });
+      const res = spawnSync(process.execPath, [self, "--cell", r, s, String(n), String(games), "1", HOURS_ON ? "1" : "0"], { encoding: "utf8" });
       if (res.status === 0 && res.stdout) return JSON.parse(res.stdout);
       process.stderr.write(`cell ${r}/${s} n=${n} attempt ${attempt + 1} exited ${res.status}; retrying\n`);
     }
     return null;
   };
-  console.log(`${games} games each. Resistance win rate (share lost on the vote track) | avg rounds | proposals per round`);
+  console.log(`${games} games each${HOURS_ON ? ", with the Hour deck" : ""}. Resistance win rate (share lost on the vote track) | avg rounds | proposals per round`);
   console.log("res/spy   " + counts.map((n) => String(n).padStart(14)).join(""));
   for (const [r, s] of matchups) {
     const cells = counts.map((n) => {

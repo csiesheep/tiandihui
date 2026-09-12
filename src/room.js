@@ -88,11 +88,22 @@ export class Room {
     this.room.lastActive = Date.now();
     for (const ws of this.sockets()) this.send(ws, this.viewMsg(this.seatOf(ws)));
   }
-  say(seat, text, hot = false) {
+  say(seat, text, hot = false, kind = undefined) {
     const entry = { seat, text, hot, sys: seat === null };
+    if (kind) entry.kind = kind;
     this.room.log.push(entry);
     if (this.room.log.length > LOG_KEEP) this.room.log.splice(0, this.room.log.length - LOG_KEEP);
     this.broadcast({ type: "say", ...entry });
+  }
+
+  // Whether the round on the table is under Hold Your Tongue. While a
+  // mission's cards turn over, the state has already drawn the next round's
+  // card, so the reveal's own card decides.
+  silenced() {
+    const r = this.room;
+    if (r.phase !== "game" || !r.state) return false;
+    if (r.stage && r.stage.kind === "missionResult") return r.stage.event.hour === "silence";
+    return r.state.hour === "silence";
   }
 
   // ---------- the one alarm ----------
@@ -142,9 +153,9 @@ export class Room {
     if (!room) {
       if (!create) return reject("noRoom");
       this.room = {
-        code, phase: "lobby", seats: [], settings: { level: "normal", blindSpies: false, lang },
+        code, phase: "lobby", seats: [], settings: { level: "normal", blindSpies: false, hours: false, lang },
         state: null, rngState: E.randomSeed(), gen: 0, deadline: 0, phaseKey: "", stage: null,
-        log: [], alarmAt: 0, idle: false, lastActive: Date.now(),
+        log: [], alarmAt: 0, idle: false, lastActive: Date.now(), hourSeen: 0,
       };
       seat = this.addSeat(name || this.t("setup.defaultName"));
     } else if (tok && (seat = room.seats.find((s) => s.token === tok && !s.ai))) {
@@ -206,6 +217,7 @@ export class Room {
         if (!isHost || room.phase !== "lobby") return;
         if (B.LEVELS.includes(m.level)) room.settings.level = m.level;
         if (typeof m.blindSpies === "boolean") room.settings.blindSpies = m.blindSpies;
+        if (typeof m.hours === "boolean") room.settings.hours = m.hours;
         this.pushLobby(); break;
       case "addBot":
         if (!isHost || room.phase !== "lobby" || room.seats.length >= MAX_SEATS) return;
@@ -230,7 +242,7 @@ export class Room {
         await this.afterChange(); break;
       }
       case "chat": {
-        if (!seat) return;
+        if (!seat || this.silenced()) return;
         const text = String(m.text ?? "").replace(/\s+/g, " ").trim().slice(0, CHAT_MAX);
         if (!text) return;
         this.say(seat.idx, text); break;
@@ -286,8 +298,8 @@ export class Room {
   // ---------- game flow ----------
   async startGame() {
     const room = this.room;
-    room.state = E.createGame(E.randomSeed(), room.seats.length, { blindSpies: room.settings.blindSpies });
-    room.phase = "game"; room.gen++; room.stage = null; room.phaseKey = ""; room.log = [];
+    room.state = E.createGame(E.randomSeed(), room.seats.length, { blindSpies: room.settings.blindSpies, hours: !!room.settings.hours });
+    room.phase = "game"; room.gen++; room.stage = null; room.phaseKey = ""; room.log = []; room.hourSeen = 0;
     for (const s of room.seats) s.ready = false;
     this.pushLobby();
     this.broadcast({ type: "log", entries: [] });
@@ -302,7 +314,7 @@ export class Room {
     const view = isBot ? E.view(before, action.seat) : null;
     room.state = E.apply(before, action);
     if (action.type === "propose") this.say(null, this.t("sys.proposed", { name: room.seats[action.seat].name, team: this.nameList(action.team) }));
-    if (isBot) {
+    if (isBot && before.hour !== "silence") {
       const line = this.withRng((rng) => sayAction(action, view, this.talkCtx(rng)));
       if (line) this.say(action.seat, line);
     }
@@ -337,13 +349,20 @@ export class Room {
         if (ev.over) this.say(null, this.t("sys.spiesWinRejects"), true);
         room.stage = { kind: "voteResult", until, event: ev };
       } else {
-        const cards = this.withRng((rng) => E.shuffle(rng, ev.team.map((_, i) => i < ev.fails)));
+        const cards = ev.cards
+          ? ev.cards.map((c) => ({ fail: !c.success, seat: c.seat }))
+          : this.withRng((rng) => E.shuffle(rng, ev.team.map((_, i) => ({ fail: i < ev.fails }))));
         const fails = ev.fails === 0 ? this.t("table.noFails") : this.t(ev.fails === 1 ? "table.failsAmong" : "table.failsAmongPlural", { fails: ev.fails, n: ev.team.length });
         const outcome = ev.success ? this.t("table.missionSuccess").toLowerCase() : this.t("table.missionFailed").toLowerCase();
         this.say(null, this.t("sys.missionResult", { n: ev.mission + 1, outcome, fails }), !ev.success);
+        if (ev.cards) {
+          const failed = ev.cards.filter((c) => !c.success).map((c) => c.seat);
+          this.say(null, failed.length ? this.t("hour.signedResult", { who: this.nameList(failed) }) : this.t("hour.signedClean"), failed.length > 0);
+        }
+        if (ev.hour === "orders" && ev.success) this.say(null, this.t("hour.ordersClean", { team: this.nameList(ev.team) }));
         room.stage = { kind: "missionResult", until, event: ev, cards };
-        // A few bots react to the result.
-        const bots = room.seats.filter((s) => s.ai).map((s) => s.idx);
+        // A few bots react to the result, unless the round was silenced.
+        const bots = ev.hour === "silence" ? [] : room.seats.filter((s) => s.ai).map((s) => s.idx);
         const speakers = this.withRng((rng) => E.shuffle(rng, bots)).slice(0, ev.success ? 2 : 3);
         for (const s of speakers) {
           const line = this.withRng((rng) => sayResult(E.view(st, s), s, this.talkCtx(rng)));
@@ -356,6 +375,12 @@ export class Room {
       return;
     }
     if (st.phase === "over") { await this.finish(); return; }
+
+    if (st.hour && st.rounds.length !== room.hourSeen) {
+      room.hourSeen = st.rounds.length;
+      const wounded = st.wounded != null ? room.seats[st.wounded].name : "";
+      this.say(null, this.t("hour.announce", { name: this.t("hour.names." + st.hour), desc: this.t("hour.desc." + st.hour, { name: wounded }) }), false, "hour");
+    }
 
     // The phase clock restarts whenever the phase (or the proposal) changes.
     const key = `${st.phase}:${st.mission}:${st.rejects}:${st.proposal ? 1 : 0}`;

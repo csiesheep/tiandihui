@@ -12,7 +12,7 @@ export default {
   setup: {
     title: "Your table", sub: "You and {bots} bots.", players: "Players", bots: "Bots", name: "Your name",
     easy: "Easy", normal: "Normal", hard: "Hard", blind: "Blind informers (informers don't know each other)",
-    start: "Deal the cards", defaultName: "You",
+    start: "Deal the cards", defaultName: "You", hours: "The Hour deck (one card a round, for that round)",
     summary: "{spies} informers · {ops} brothers{twoFail}", twoFail: " · mission 4 needs two fails",
   },
   lobby: {
@@ -64,6 +64,23 @@ export default {
     joined: "{name} joined.", left: "{name} left.", leftGame: "{name} left; a bot plays that seat now.",
     timeout: "{name} took too long; the table decided for them.",
     over: "{side} win.",
+  },
+  hour: {
+    label: "The Hour", left: "{n} left",
+    names: { light: "Travel Light", signed: "Signed", orders: "Orders from Above", wounded: "Laid Up", silence: "Hold Your Tongue", quiet: "Quiet Night" },
+    desc: {
+      light: "The team goes one short this round.",
+      signed: "No shuffle. When the cards turn over, everyone sees who played what.",
+      orders: "Informers on the team must play Fail. If the mission succeeds, the whole team is clean.",
+      wounded: "{name} is laid up and can't be sent this round.",
+      silence: "Nobody speaks this round.",
+      quiet: "Nothing stirs tonight.",
+    },
+    announce: "The Hour: {name}. {desc}",
+    signedResult: "Signed: {who} played Fail.", signedClean: "Signed: every card was a Success.",
+    ordersClean: "Under orders, every card was a Success: {team} are clean.", ordersCleanShort: "under orders: the whole team is clean",
+    mustFail: "under orders: Fail only", signedNote: "Signed round: the cards are not shuffled.",
+    silenced: "Hold your tongue: no talking this round", hurt: "laid up", signedShown: "Signed and revealed",
   },
   names: ["Ah Qi", "Shitou", "Ma San", "Xiuniang", "Old Dao", "Ah Jiu", "Tieniu", "Xiao Liu", "Ah Long", "Chunniang"],
   talk: {

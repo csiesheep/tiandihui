@@ -32,6 +32,32 @@ export const TEAM = {
 export const failsNeeded = (n, mission) => (n >= 7 && mission === 3 ? 2 : 1);
 export const teamSize = (n, mission) => TEAM[n][mission];
 
+// ---------- the Hour deck (天時) ----------
+// An optional deck of six table-wide conditions. One card is drawn face up at
+// the start of every round and holds for that round only. Drawn cards are not
+// returned, so a five-round game shows five of the six and anyone can count
+// what is left.
+//   light    輕裝  the team goes one short
+//   signed   畫押  no shuffle: who played what is public
+//   orders   密令  informers on the team must play Fail
+//   wounded  掛彩  one random seat cannot be sent this round
+//   silence  封口  nobody talks this round (enforced by the clients and room)
+//   quiet    無事  nothing
+export const HOURS = ["light", "signed", "orders", "wounded", "silence", "quiet"];
+
+// Whether a card may be drawn for this mission. Travel Light never takes a
+// two-seat team down to one, and nobody is laid up on the fifth mission,
+// where a random absence would decide the game by luck.
+export function hourAllowed(n, mission, card) {
+  if (card === "light") return TEAM[n][mission] > 2;
+  if (card === "wounded") return mission < MISSIONS - 1;
+  return true;
+}
+
+// The team size this round, after the Hour.
+export const roundTeamSize = (state) =>
+  teamSize(state.n, state.mission) - (state.hour === "light" ? 1 : 0);
+
 // ---------- seeded RNG (mulberry32), so a game replays from seed + actions ----------
 export function makeRng(seed) {
   let a = seed >>> 0;
@@ -68,9 +94,10 @@ export function createGame(seed, n, options = {}) {
   const roles = new Array(n).fill(RESISTANCE);
   for (const s of shuffle(rng, [...Array(n).keys()]).slice(0, SPIES[n])) roles[s] = SPY;
   const leader = rng.int(n);
+  const hours = !!options.hours;
   return {
     seed, n, roles, leader,
-    options: { blindSpies: !!options.blindSpies },
+    options: { blindSpies: !!options.blindSpies, hours },
     phase: "reveal",          // reveal | propose | vote | mission | over
     ready: new Array(n).fill(false),
     mission: 0,               // index of the current mission
@@ -83,6 +110,9 @@ export function createGame(seed, n, options = {}) {
     winner: null,
     reason: null,             // "missions" | "rejects"
     event: null,              // what the last action caused, for the UI / bots
+    hourDeck: hours ? HOURS.slice() : [], // Hour cards not yet drawn
+    hour: null,               // this round's Hour card
+    wounded: null,            // the seat laid up this round, if any
     rngState: rng.getState(),
   };
 }
@@ -133,10 +163,11 @@ export function apply(prev, action) {
       needPhase("propose"); checkSeat();
       if (seat !== st.leader) throw new Error(`seat ${seat} is not the leader`);
       const team = Array.isArray(action.team) ? action.team.slice().sort((a, b) => a - b) : null;
-      const size = teamSize(st.n, st.mission);
+      const size = roundTeamSize(st);
       if (!team || team.length !== size) throw new Error(`team must have ${size} seats`);
       if (new Set(team).size !== team.length) throw new Error("duplicate seat on team");
       if (team.some((s) => !Number.isInteger(s) || s < 0 || s >= st.n)) throw new Error("bad seat on team");
+      if (st.wounded != null && team.includes(st.wounded)) throw new Error(`seat ${st.wounded} is laid up this round`);
       st.proposal = team;
       st.votes = new Array(st.n).fill(null);
       st.phase = "vote";
@@ -177,16 +208,23 @@ export function apply(prev, action) {
       if (st.played[seat] !== null) throw new Error(`seat ${seat} already played`);
       if (typeof action.success !== "boolean") throw new Error("card must be true (Success) or false (Fail)");
       if (!action.success && st.roles[seat] === RESISTANCE) throw new Error("operatives must play Success");
+      if (action.success && st.hour === "orders" && st.roles[seat] === SPY) throw new Error("under orders, informers must play Fail");
       st.played[seat] = action.success;
       if (st.proposal.some((s) => st.played[s] === null)) return st;
-      // Every card is in: count fails; who played what is never recorded.
+      // Every card is in: count fails. Who played what is recorded only on a
+      // signed round, where the cards are not shuffled.
       const fails = st.proposal.filter((s) => st.played[s] === false).length;
       const need = failsNeeded(st.n, st.mission);
       const success = fails < need;
       const round = currentRound(st);
       round.result = { team: st.proposal, fails, need, success };
-      st.score[success ? RESISTANCE : SPY] += 1;
       st.event = { type: "mission", mission: st.mission, team: st.proposal, fails, need, success };
+      if (st.hour) st.event.hour = st.hour;
+      if (st.hour === "signed") {
+        round.result.cards = st.proposal.map((s) => ({ seat: s, success: st.played[s] }));
+        st.event.cards = clone(round.result.cards);
+      }
+      st.score[success ? RESISTANCE : SPY] += 1;
       st.played = null;
       st.proposal = null;
       const side = success ? RESISTANCE : SPY;
@@ -206,7 +244,25 @@ export function apply(prev, action) {
 }
 
 function startRound(st) {
-  st.rounds.push({ mission: st.mission, proposals: [], result: null });
+  const round = { mission: st.mission, proposals: [], result: null };
+  st.hour = null;
+  st.wounded = null;
+  if (st.options.hours) {
+    // Draw from what is left, among the cards allowed for this mission. The
+    // rng lives in the state, so a game still replays from seed + actions.
+    const rng = makeRng(0);
+    rng.setState(st.rngState);
+    const legal = st.hourDeck.filter((c) => hourAllowed(st.n, st.mission, c));
+    if (legal.length) {
+      st.hour = legal[rng.int(legal.length)];
+      st.hourDeck.splice(st.hourDeck.indexOf(st.hour), 1);
+      if (st.hour === "wounded") st.wounded = rng.int(st.n);
+    }
+    st.rngState = rng.getState();
+    round.hour = st.hour;
+    round.wounded = st.wounded;
+  }
+  st.rounds.push(round);
   st.phase = "propose";
   st.proposal = null;
   st.votes = null;
@@ -220,6 +276,8 @@ function endGame(st, winner, reason) {
   st.proposal = null;
   st.votes = null;
   st.played = null;
+  st.hour = null;
+  st.wounded = null;
   st.event = { ...(st.event || {}), over: true, winner, reason };
 }
 
@@ -236,11 +294,11 @@ export function view(state, seat = null) {
     role: mine,
     spies: spiesVisible ? spiesOf(state) : null,
     roles: over ? state.roles.slice() : null,
-    options: { ...state.options },
+    options: { blindSpies: !!state.options.blindSpies, hours: !!state.options.hours },
     phase: state.phase,
     leader: state.leader,
     mission: state.mission,
-    teamSize: state.mission < MISSIONS ? teamSize(state.n, state.mission) : null,
+    teamSize: state.mission < MISSIONS ? roundTeamSize(state) : null,
     failsNeeded: state.mission < MISSIONS ? failsNeeded(state.n, state.mission) : null,
     sizes: TEAM[state.n],
     rejects: state.rejects,
@@ -250,10 +308,16 @@ export function view(state, seat = null) {
     // resolved votes are in rounds[].proposals[] and this is null.
     voted: state.votes ? state.votes.map((x) => x !== null) : null,
     myVote: state.votes && seat !== null ? state.votes[seat] : null,
-    // Same for mission cards, which stay secret forever; only the count of
-    // fails is ever published, through rounds[].result.
+    // Same for mission cards: only who has played, never what, until the
+    // mission resolves. Then only the count of fails is published, through
+    // rounds[].result, unless the round was signed.
     played: state.played ? state.proposal.map((s) => state.played[s] !== null) : null,
     myCard: state.played && seat !== null ? state.played[seat] : null,
+    // The Hour is public: this round's card, the seat laid up, and what is
+    // left in the deck (sorted, so the list says nothing about draw order).
+    hour: state.hour ?? null,
+    wounded: state.wounded ?? null,
+    hourDeck: state.hourDeck ? state.hourDeck.slice().sort((a, b) => HOURS.indexOf(a) - HOURS.indexOf(b)) : [],
     rounds: clone(state.rounds),
     score: { ...state.score },
     winner: state.winner,

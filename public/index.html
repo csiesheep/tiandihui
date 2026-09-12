@@ -66,6 +66,7 @@
   <span class="lab" data-t="setup.name"></span>
   <label class="field"><input id="nameInput" maxlength="16" autocomplete="off"></label>
   <label class="field check"><span data-t="setup.blind"></span><input type="checkbox" id="blindChk"></label>
+  <label class="field check"><span data-t="setup.hours"></span><input type="checkbox" id="hoursChk"></label>
   <div class="spacer"></div>
   <button type="button" class="btn p" id="btnStart" data-t="setup.start"></button>
 </main>
@@ -85,6 +86,7 @@
       <button type="button" data-level="hard" data-t="setup.hard"></button>
     </div>
     <label class="field check"><span data-t="setup.blind"></span><input type="checkbox" id="lbBlind"></label>
+    <label class="field check"><span data-t="setup.hours"></span><input type="checkbox" id="lbHours"></label>
   </div>
   <p class="note" id="lbStatus"></p>
   <div class="log" id="lbLog"></div>
@@ -98,6 +100,7 @@
   <div class="bar"><span id="barLeft"></span><span id="barRight"></span></div>
   <div class="track" id="track"></div>
   <div class="vt" id="vtrack"></div>
+  <div class="hour" id="hourBar" hidden></div>
   <div class="ring" id="ring"></div>
   <div id="panel"></div>
   <div class="log" id="log" aria-live="polite"></div>
