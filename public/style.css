@@ -178,7 +178,7 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 
 /* overlays: reveal card, game over */
 .overlay { position: fixed; inset: 0; background: rgba(42, 36, 32, .94); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
-.overlay .sheet { width: 100%; max-width: 350px; max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.overlay .sheet { width: 100%; max-width: 350px; max-height: 100%; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .overlay .btn { border-color: var(--paper); color: var(--paper); }
 .overlay .btn.p { border-color: var(--red); color: #f4ead6; }
 .overlay .btn:disabled { border-color: var(--faint); color: var(--faint); }
@@ -189,6 +189,9 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 .card-role.hidden-role { background: repeating-linear-gradient(45deg, var(--paper3) 0 8px, var(--paper) 8px 16px); padding-top: 26px; }
 .card-role .k { font-size: 10.5px; letter-spacing: .3em; text-indent: .3em; color: var(--faint); }
 .card-role .role { font-family: var(--disp); font-weight: 700; font-size: 72px; line-height: 1; letter-spacing: .1em; text-indent: .1em; }
+/* Latin role names run long: BROTHER, INFORMER. Smaller and tighter than 密探. */
+html:not([lang="zh-Hant"]) .card-role .role { font-size: 44px; letter-spacing: .06em; text-indent: .06em; }
+.card-role .role { max-width: 100%; }
 .card-role.spy .role { color: var(--ink); } .card-role.res .role { color: var(--red-d); }
 .card-role p { margin: 0; font-size: 13.5px; line-height: 1.75; color: #4a3f35; max-width: 24ch; }
 .card-role .rule { width: 60px; height: 1px; background: var(--line-s); margin-top: 4px; }
