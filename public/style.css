@@ -8,7 +8,8 @@
   --ink: #1e1a16; --mute: #5a4d40; --faint: #7a6c5d; --faint2: #9a8c7c;
   --line: rgba(30, 26, 22, .35); --line-s: rgba(30, 26, 22, .55);
   --red: #b5322a; --red-d: #8a2a22; --red-t: rgba(181, 50, 42, .35);
-  --gold: #c9962b; --gold-d: #8f6a1c; --gold-t: rgba(201, 150, 43, .14);
+  --gold: #c9962b; --gold-d: #8f6a1c; --gold-t: rgba(201, 150, 43, .14); --gold-p: #ead9b0;
+  --hat: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 20'><circle cx='11' cy='3' r='2.6' fill='%23b5322a'/><path d='M11 4 L21 16 L1 16 Z' fill='%23c9962b'/><rect x='0' y='15.5' width='22' height='3.5' fill='%238f6a1c'/></svg>");
   --dark: #2a2420;
   --disp: "LXGW WenKai TC", "Noto Serif TC", "PingFang TC", "Microsoft JhengHei", serif;
   --body: "Noto Serif TC", "PingFang TC", "Microsoft JhengHei", Georgia, serif;
@@ -93,7 +94,7 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 .track { display: flex; gap: 8px; align-items: flex-start; padding-bottom: 16px; }
 .m { flex: 1; aspect-ratio: 1; border: 1.5px solid var(--faint2); display: flex; align-items: center; justify-content: center; font-family: var(--body); font-weight: 600; font-size: 22px; color: var(--faint2); position: relative; }
 .m.ok { background: var(--red); border-color: var(--red); color: var(--paper); font-weight: 900; font-size: 26px; transform: rotate(-5deg); box-shadow: inset 0 0 0 2px var(--red), inset 0 0 0 3.5px var(--paper); }
-.m.no { background: var(--ink); border-color: var(--ink); color: var(--paper); font-weight: 900; font-size: 26px; transform: rotate(4deg); box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3.5px var(--paper); }
+.m.no { background: var(--gold); border-color: var(--gold); color: var(--paper); font-weight: 900; font-size: 26px; transform: rotate(4deg); box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 0 3.5px var(--paper); }
 .m.cur { border: 2px solid var(--red-d); color: var(--red-d); box-shadow: 0 0 0 4px var(--paper), 0 0 0 5px var(--red-t); }
 .m i { position: absolute; bottom: -17px; font: 400 10px var(--body); color: var(--faint); letter-spacing: .1em; font-style: normal; white-space: nowrap; transform: none; }
 .m.ok i, .m.no i { display: none; }
@@ -111,13 +112,11 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 .ring::after { width: 56%; height: 56%; border-color: rgba(30, 26, 22, .18); }
 .seat { position: absolute; left: 50%; top: 50%; width: 76px; margin: -36px 0 0 -38px; display: flex; flex-direction: column; align-items: center; gap: 3px; transform: rotate(calc(var(--a) * 360deg)) translateY(calc(-1 * var(--r))) rotate(calc(var(--a) * -360deg)); background: none; z-index: 1; }
 .av { width: 46px; height: 46px; border-radius: 50%; background: var(--paper3); border: 1.5px solid var(--ink); display: flex; align-items: center; justify-content: center; font-family: var(--body); font-weight: 600; font-size: 18px; position: relative; transition: box-shadow .15s, border-color .15s, opacity .2s; }
-.seat.you .av { background: var(--ink); color: var(--paper); }
-.seat.team .av, .seat.pick .av { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--red); }
-/* A spy sees every spy with the Qing's yellow around them; a spy on the team
-   keeps the red ring inside it. */
-.seat.spy .av { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--gold); }
-.seat.spy.team .av, .seat.spy.pick .av { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--red), 0 0 0 7px var(--paper), 0 0 0 9px var(--gold); }
-.seat.spy .av::after { content: "清"; position: absolute; right: -9px; bottom: -5px; width: 16px; height: 16px; background: var(--gold); color: var(--ink); font-size: 9px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+.seat.team .av, .seat.pick .av { border: 3px solid var(--red); }
+/* A spy sees every spy on Qing-yellow paper wearing an official's hat; a spy
+   on the team keeps the red ring around that. */
+.seat.spy .av, .mates .av { background: var(--gold-p); }
+.seat.spy .av::after, .mates .av::after { content: ""; position: absolute; right: -11px; bottom: -6px; width: 22px; height: 20px; background: var(--hat) no-repeat center / contain; }
 .seat.lead .av::before { content: "令"; position: absolute; top: -13px; left: 50%; width: 18px; height: 18px; margin-left: -9px; background: var(--red); color: var(--paper); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; transform: rotate(-8deg); z-index: 1; }
 .seat.dim .av { opacity: .5; }
 /* Game over: the winners glow in their side's colour, the losers fade. */
@@ -129,7 +128,7 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 .seat.win.dim .nm { color: var(--faint); }
 .seat.dim .nm { color: var(--faint); }
 .seat .nm { font-size: 11px; color: var(--ink); white-space: nowrap; max-width: 76px; overflow: hidden; text-overflow: ellipsis; }
-.seat.you .nm { color: var(--red-d); font-weight: 600; }
+.seat.you .nm { color: var(--ink); font-weight: 700; }
 .seat .ai { font: 400 8px var(--body); color: var(--faint2); letter-spacing: .1em; position: absolute; left: 50%; bottom: -13px; transform: translateX(-50%); }
 .seat .v { position: absolute; right: -10px; top: -8px; width: 20px; height: 20px; font: 900 11px var(--body); display: flex; align-items: center; justify-content: center; color: var(--paper); z-index: 1; }
 .seat .v.y { background: var(--red); transform: rotate(6deg); } .seat .v.n { background: var(--ink); transform: rotate(-6deg); }
@@ -140,7 +139,7 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 .center .k { font-size: 10px; color: var(--faint); letter-spacing: .2em; display: block; }
 .center .big { font-family: var(--disp); font-weight: 700; font-size: 40px; line-height: 1; }
 .center .big.mid { font-size: 20px; line-height: 1.2; font-family: var(--body); font-weight: 600; }
-.center .big.blue { color: var(--red-d); } .center .big.red { color: var(--ink); } .center .big.dimmed { color: var(--faint2); font-size: 26px; }
+.center .big.blue { color: var(--red-d); } .center .big.red { color: var(--gold-d); } .center .big.dimmed { color: var(--faint2); font-size: 26px; }
 .center .big .dimmed { color: var(--faint2); font-size: .6em; }
 .center .sub { font-size: 11.5px; color: var(--red-d); display: block; }
 
@@ -148,7 +147,8 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 #panel { display: flex; flex-direction: column; gap: 10px; }
 .cards { display: flex; gap: 10px; }
 .mc { flex: 1; border: 1.5px solid var(--ink); background: rgba(255, 250, 238, .6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-family: var(--body); font-weight: 600; font-size: 15px; letter-spacing: .2em; text-indent: .2em; min-height: 132px; color: var(--ink); }
-.mc::before { content: "敗"; width: 54px; height: 54px; background: var(--ink); color: var(--paper); font-weight: 900; font-size: 28px; letter-spacing: 0; text-indent: 0; display: flex; align-items: center; justify-content: center; transform: rotate(4deg); box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3.5px var(--paper3); }
+.mc::before { content: "敗"; width: 54px; height: 54px; background: var(--gold); color: var(--paper); font-weight: 900; font-size: 28px; letter-spacing: 0; text-indent: 0; display: flex; align-items: center; justify-content: center; transform: rotate(4deg); box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 0 3.5px var(--paper3); }
+.mc.f { border-color: var(--gold); color: var(--gold-d); }
 .mc.s { border-color: var(--red); color: var(--red-d); }
 .mc.s::before { content: "成"; background: var(--red); transform: rotate(-5deg); box-shadow: inset 0 0 0 2px var(--red), inset 0 0 0 3.5px var(--paper3); }
 .mc:disabled { border-style: dashed; border-color: var(--faint2); color: var(--faint2); }
@@ -162,7 +162,8 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 .flip .face::before { width: 34px; height: 34px; font-weight: 900; font-size: 19px; letter-spacing: 0; display: flex; align-items: center; justify-content: center; color: var(--paper); }
 .flip .face.s { border-color: var(--red); color: var(--red-d); }
 .flip .face.s::before { content: "成"; background: var(--red); transform: rotate(-5deg); box-shadow: inset 0 0 0 1.5px var(--red), inset 0 0 0 2.5px var(--paper3); }
-.flip .face.f::before { content: "敗"; background: var(--ink); transform: rotate(4deg); box-shadow: inset 0 0 0 1.5px var(--ink), inset 0 0 0 2.5px var(--paper3); }
+.flip .face.f { border-color: var(--gold); color: var(--gold-d); }
+.flip .face.f::before { content: "敗"; background: var(--gold); transform: rotate(4deg); box-shadow: inset 0 0 0 1.5px var(--gold), inset 0 0 0 2.5px var(--paper3); }
 .flip .face .who { font: 400 10.5px var(--body); letter-spacing: 0; color: var(--mute); max-width: 66px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .note { font-size: 12.5px; color: var(--mute); text-align: center; margin: 0; }
 
@@ -196,7 +197,7 @@ html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30p
 .card-role.res .stamp { background: var(--red); color: var(--paper); box-shadow: inset 0 0 0 2px var(--red), inset 0 0 0 3px var(--paper); transform: rotate(-8deg); }
 .mates { display: flex; gap: 18px; margin-top: 2px; flex-wrap: wrap; justify-content: center; }
 .mates div { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; }
-.mates .av { width: 42px; height: 42px; font-size: 17px; box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--gold); }
+.mates .av { width: 42px; height: 42px; font-size: 17px; }
 .who { display: flex; flex-wrap: wrap; gap: 6px; }
 .who span { font-size: 12px; padding: 4px 9px; border: 1.5px solid var(--ink); background: var(--paper2); }
 .who span.s { border-color: var(--gold); background: var(--gold-t); } .who span.r { border-color: var(--red-d); color: var(--red-d); }
@@ -204,11 +205,11 @@ table.h { width: 100%; border-collapse: collapse; font-size: 12px; border-top: 1
 table.h th { font: 400 10px var(--body); letter-spacing: .14em; color: var(--faint); text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line-s); }
 table.h td { padding: 7px 4px; border-bottom: 1px solid var(--line); color: var(--ink); vertical-align: top; }
 .dot { display: inline-block; width: 9px; height: 9px; vertical-align: 0; margin-right: 5px; }
-.dot.ok { background: var(--red); transform: rotate(-5deg); } .dot.no { background: var(--ink); transform: rotate(4deg); }
+.dot.ok { background: var(--red); transform: rotate(-5deg); } .dot.no { background: var(--gold); transform: rotate(4deg); }
 .result-head { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 2px; }
 .result-head .k { font-size: 10.5px; color: var(--faint); letter-spacing: .3em; display: block; }
 .result-head .big { font-family: var(--disp); font-weight: 700; font-size: 40px; line-height: 1.1; }
-.result-head .big.red { color: var(--ink); } .result-head .big.blue { color: var(--red-d); }
+.result-head .big.red { color: var(--gold-d); } .result-head .big.blue { color: var(--red-d); }
 .result-head .sub { font-size: 13.5px; color: var(--ink); display: block; }
 
 @media (prefers-reduced-motion: reduce) { .flip .card { transition: none; } }
