@@ -51,6 +51,7 @@ a { color: var(--red-d); }
 .foot { font-size: 11px; color: var(--faint); text-align: center; margin: 0; line-height: 1.6; }
 .foot a { text-decoration: none; letter-spacing: .1em; }
 .muted { color: var(--faint); }
+.about { font-size: 12.5px; line-height: 1.7; color: var(--mute); margin: 6px 0 0; border-top: 1px solid var(--line); padding-top: 10px; }
 
 /* landing: the title stands, the seal sits beside it */
 .hero-wrap { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 18px; min-height: 300px; border-top: 1px solid var(--line-s); padding-top: 22px; }

@@ -8,7 +8,8 @@ export default {
   tagline: "Five to ten of you swear the oath. Two, three or four serve the Qing court. Carry three missions through before they wreck three.",
   credit: "A free fan project, not affiliated with any publisher. The play is inspired by The Resistance, a social deduction game designed by Don Eskridge.",
   nav: { back: "Back", rules: "How to play", hub: "csiesheep games", lang: "中文", solo: "solo" },
-  landing: { play: "Play vs bots", create: "Create a room", join: "Join", code: "Room code", soon: "Rooms need a name: type yours below, then create or join.", badCode: "Enter the four-letter room code.", name: "Your name" },
+  landing: { play: "Play vs bots", create: "Create a room", join: "Join", code: "Room code", soon: "Rooms need a name: type yours below, then create or join.", badCode: "Enter the four-letter room code.", name: "Your name",
+    about: "A social deduction game in the family of The Resistance and Avalon: hidden roles, team votes and missions for five to ten players, about twenty minutes a game. Play solo against AI bots that talk at the table, or open a free online room and share a four-letter code with friends. English and Traditional Chinese." },
   setup: {
     title: "Your table", sub: "You and {bots} bots.", players: "Players", bots: "Bots", name: "Your name",
     easy: "Easy", normal: "Normal", hard: "Hard", blind: "Blind informers (informers don't know each other)",
