@@ -2,7 +2,7 @@
 export default {
   lang: "zh-Hant",
   title: "天地會",
-  heroTag: "同心同德・忠義千秋", heroN: "五至十人",
+  heroTag: "同心同德・忠義千秋",
   nums: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"],
   tagline: "五到十個人歃血為盟，其中兩到四個是清廷的密探。在他們搞砸三次任務之前，先辦成三次。",
   credit: "自由同人專案，與任何出版社無關。玩法參考 Don Eskridge 設計的社交推理遊戲 The Resistance。",

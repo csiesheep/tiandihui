@@ -27,7 +27,7 @@ a { color: var(--red-d); }
 /* header */
 .top { width: 100%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; padding: 14px 20px 0; font-size: 12px; letter-spacing: .12em; color: var(--mute); }
 .top .brand { text-decoration: none; color: var(--ink); font-weight: 600; display: flex; align-items: center; gap: 8px; }
-.top .brand::before { content: "會"; width: 16px; height: 16px; background: var(--red); color: var(--paper); font-size: 9px; font-weight: 900; letter-spacing: 0; display: flex; align-items: center; justify-content: center; line-height: 1; }
+.top .brand::before { content: "天地"; width: 22px; height: 22px; background: var(--red); color: var(--paper); font-size: 8px; font-weight: 900; letter-spacing: .04em; writing-mode: vertical-rl; display: flex; align-items: center; justify-content: center; line-height: 1; box-shadow: inset 0 0 0 1.5px var(--red), inset 0 0 0 2.5px var(--paper); }
 .top nav { display: flex; gap: 16px; }
 .top nav a { color: var(--mute); text-decoration: none; }
 .linkish { color: var(--mute); letter-spacing: .12em; font-size: 12px; }
@@ -53,19 +53,16 @@ a { color: var(--red-d); }
 .muted { color: var(--faint); }
 .about { font-size: 12.5px; line-height: 1.7; color: var(--mute); margin: 6px 0 0; border-top: 1px solid var(--line); padding-top: 10px; }
 
-/* landing: the title stands, the seal sits beside it */
-.hero-wrap { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 18px; min-height: 300px; border-top: 1px solid var(--line-s); padding-top: 22px; }
-.hero-l { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
-.hero { font-family: var(--disp); font-weight: 700; font-size: 42px; line-height: 1.05; margin: 0; letter-spacing: .01em; text-wrap: balance; }
-.hero-tag { font-size: 13px; letter-spacing: .32em; color: var(--mute); padding-top: 6px; }
-.hero-r { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; padding-top: 10px; }
-.hero-r .seal { width: 92px; height: 92px; font-size: 34px; box-shadow: inset 0 0 0 3px var(--red), inset 0 0 0 5px var(--paper); opacity: .94; }
-.hero-r .seal span { writing-mode: vertical-rl; letter-spacing: .06em; line-height: 1; }
-.hero-n { font-size: 11px; letter-spacing: .3em; color: var(--red-d); white-space: nowrap; }
-html[lang="zh-Hant"] .hero-l { flex-direction: row; gap: 14px; }
-html[lang="zh-Hant"] .hero { writing-mode: vertical-rl; font-size: 104px; line-height: 1; letter-spacing: .04em; }
-html[lang="zh-Hant"] .hero-tag, html[lang="zh-Hant"] .hero-n { writing-mode: vertical-rl; }
-.tag-line { color: #4a3f35; font-size: 14px; line-height: 1.75; margin: 0; max-width: 30ch; }
+/* landing: the seal, then the title, on one line; the motto under it */
+.hero-wrap { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; border-top: 1px solid var(--line-s); padding-top: 22px; }
+.hero-row { display: flex; align-items: center; gap: 16px; }
+.hero-row .seal { width: 72px; height: 72px; font-size: 26px; box-shadow: inset 0 0 0 3px var(--red), inset 0 0 0 5px var(--paper); opacity: .94; }
+.hero-row .seal span { writing-mode: vertical-rl; letter-spacing: .06em; line-height: 1; }
+.hero { font-family: var(--disp); font-weight: 700; font-size: 40px; line-height: 1.05; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.hero-tag { font-size: 13px; letter-spacing: .32em; color: var(--mute); }
+html[lang="zh-Hant"] .hero { font-size: 84px; line-height: 1; letter-spacing: .06em; }
+html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30px; }
+.tag-line { color: #4a3f35; font-size: 14.5px; line-height: 1.8; margin: 0; max-width: 32ch; }
 
 /* controls */
 .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px 14px; font-family: var(--body); font-weight: 600; font-size: 17px; letter-spacing: .24em; text-indent: .24em; border: 1.5px solid var(--ink); color: var(--ink); background: transparent; text-decoration: none; transition: transform .08s ease, opacity .2s; }
