@@ -7,7 +7,7 @@ export default {
   tagline: "歃血為盟，反清復明。辦成三次任務，大事可成；可坐在你身邊的，未必是兄弟。",
   credit: "自由同人專案，與任何出版社無關。玩法參考 Don Eskridge 設計的社交推理遊戲 The Resistance。",
   nav: { back: "返回", rules: "玩法說明", hub: "csiesheep games", lang: "EN", solo: "單人" },
-  landing: { play: "跟機器人玩", create: "開房間", join: "加入", code: "房間代碼", soon: "開房間要先有名字：在下面輸入，然後開房或加入。", badCode: "請輸入四個字的房間代碼。", name: "你的名字",
+  landing: { play: "單人遊戲", create: "開房間", join: "加入", code: "房間代碼", soon: "開房間要先有名字：在下面輸入，然後開房或加入。", badCode: "請輸入四個字的房間代碼。", name: "你的名字",
     about: "跟 The Resistance、阿瓦隆同一類的社交推理遊戲：隱藏身分、投票、出任務，五到十人，一局約二十分鐘。可以單人跟會說話的機器人玩，也可以免費開房間，把四個字的代碼傳給朋友一起玩。中英文都有。" },
   setup: {
     title: "你的牌桌", sub: "你和 {bots} 個機器人。", players: "人數", bots: "機器人", name: "你的名字",

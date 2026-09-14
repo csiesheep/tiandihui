@@ -47,7 +47,11 @@ a { color: var(--red-d); }
 .lab { font-size: 10.5px; letter-spacing: .16em; color: var(--faint); }
 .spacer { flex: 1; }
 .row { display: flex; gap: 8px; }
-.row > * { flex: 1; }
+.row > * { flex: 1; min-width: 0; }
+/* The code field takes what is left; Join keeps a fixed width. Inputs carry an
+   intrinsic width (size=20 by default) that pushed Join off a phone screen. */
+.join-row .btn { flex: 0 0 96px; width: 96px; }
+.join-row .field input { width: 5ch; }
 .grow { flex: 1; }
 .foot { font-size: 11px; color: var(--faint); text-align: center; margin: 0; line-height: 1.6; }
 .foot a { text-decoration: none; letter-spacing: .1em; }
@@ -286,6 +290,8 @@ table.h .hour-tag { font: 400 10px var(--body); color: var(--red-d); white-space
 .tut-illo .m.mini.ok, .tut-illo .m.mini.no { font-size: 14px; }
 .tut-illo .rc { width: 44px; height: 60px; border: 1.5px solid var(--ink); background: var(--paper3); display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-size: 18px; font-weight: 700; }
 .tut-illo .rc.r { color: var(--red-d); } .tut-illo .rc.s { color: var(--gold-d); }
+/* Latin role names (Brother, Informer) run wider than the 44px card. */
+html:not([lang="zh-Hant"]) .tut-illo .rc { width: auto; padding: 0 12px; font-size: 16px; letter-spacing: .02em; }
 .tut-illo .vb { display: flex; align-items: center; justify-content: center; width: 96px; height: 38px; font-weight: 700; letter-spacing: .2em; text-indent: .2em; }
 .tut-illo .vb.y { background: var(--red); color: #f4ead6; } .tut-illo .vb.n { border: 1.5px solid var(--ink); }
 .btn.tut-start i { font-style: normal; font-size: 11px; font-weight: 400; letter-spacing: .1em; text-indent: 0; color: rgba(244, 234, 214, .8); }
