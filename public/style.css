@@ -265,3 +265,36 @@ table.h .hour-tag { font: 400 10px var(--body); color: var(--red-d); white-space
 
 /* Recused: the leader's seat, not tappable while the team is picked */
 .seat.recused .av { border-style: dashed; }
+
+/* ---- Tutorial: the intro page, the guide slip on the table -------------- */
+.tut-link { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 14px; margin-top: 4px; border: 1.5px dashed var(--red-d); color: var(--red-d); font-size: 13.5px; letter-spacing: .16em; text-decoration: none; }
+.seal-mini { width: 20px; height: 20px; flex: none; background: var(--red-d); color: var(--paper); font-family: var(--body); font-weight: 900; font-size: 11px; letter-spacing: 0; display: flex; align-items: center; justify-content: center; transform: rotate(-8deg); }
+.tut-step { display: flex; gap: 16px; align-items: flex-start; padding: 18px 0; border-top: 1px solid var(--line-s); }
+.tut-step .n { width: 34px; height: 34px; flex: none; border: 1.5px solid var(--red-d); color: var(--red-d); display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-size: 20px; font-weight: 700; }
+.tut-step .b { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.tut-step b { font-size: 17px; font-weight: 700; letter-spacing: .08em; }
+.tut-step p { margin: 0; font-size: 13.5px; line-height: 1.75; color: #4a3f35; }
+.tut-illo { display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+.tut-illo small { font-size: 12px; color: var(--faint); }
+.tut-illo .av { position: relative; width: 40px; height: 40px; font-size: 16px; }
+.tut-illo .av.team { border: 3px solid var(--red); }
+.tut-illo .av.you { font-weight: 700; }
+.tut-illo .av .lg { position: absolute; top: -12px; left: 50%; width: 16px; height: 16px; margin-left: -8px; background: var(--red); color: var(--paper); font-size: 9px; font-weight: 900; display: flex; align-items: center; justify-content: center; transform: rotate(-8deg); }
+.tut-illo .m { flex: 0 0 46px; width: 46px; height: 46px; aspect-ratio: auto; }
+.tut-illo .m.ok, .tut-illo .m.no { font-size: 22px; }
+.tut-illo .m.mini { flex-basis: 30px; width: 30px; height: 30px; font-size: 14px; }
+.tut-illo .m.mini.ok, .tut-illo .m.mini.no { font-size: 14px; }
+.tut-illo .rc { width: 44px; height: 60px; border: 1.5px solid var(--ink); background: var(--paper3); display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-size: 18px; font-weight: 700; }
+.tut-illo .rc.r { color: var(--red-d); } .tut-illo .rc.s { color: var(--gold-d); }
+.tut-illo .vb { display: flex; align-items: center; justify-content: center; width: 96px; height: 38px; font-weight: 700; letter-spacing: .2em; text-indent: .2em; }
+.tut-illo .vb.y { background: var(--red); color: #f4ead6; } .tut-illo .vb.n { border: 1.5px solid var(--ink); }
+.btn.tut-start i { font-style: normal; font-size: 11px; font-weight: 400; letter-spacing: .1em; text-indent: 0; color: rgba(244, 234, 214, .8); }
+.coach { display: grid; grid-template-columns: 30px 1fr; border: 1.5px solid var(--red-d); background: var(--paper3); box-shadow: 3px 3px 0 rgba(30, 26, 22, .12); text-align: left; }
+.coach .k { background: var(--red-d); color: var(--paper); font-size: 12px; font-weight: 600; letter-spacing: .3em; writing-mode: vertical-rl; display: flex; align-items: center; justify-content: center; }
+.coach .b { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+.coach p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--ink); }
+.coach .f { display: flex; justify-content: space-between; align-items: center; min-height: 20px; }
+.coach .f small { font-size: 10.5px; letter-spacing: .14em; color: var(--faint); }
+.coach .f button { height: 32px; padding: 0 16px; border: 1.5px solid var(--red-d); background: none; color: var(--red-d); font: 700 13px var(--body); letter-spacing: .16em; text-indent: .16em; cursor: pointer; }
+.overlay .coach { width: 100%; }
+.tut-tips { margin: 0; padding: 12px 0 0; list-style: none; border-top: 1px solid var(--line-s); display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 1.6; color: #4a3f35; }

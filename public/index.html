@@ -84,10 +84,20 @@
     <label class="field grow"><span data-t="landing.code"></span><input id="joinCode" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="_ _ _ _"></label>
     <button type="button" class="btn sm gh" id="btnJoin" data-t="landing.join"></button>
   </div>
+  <a class="tut-link" href="?tutorial" id="tutLink"><span class="seal-mini">引</span><span data-t="tutorial.link"></span></a>
   <p class="foot muted" id="landStatus"></p>
   <p class="about" data-t="landing.about"></p>
   <p class="foot"><small data-t="credit"></small></p>
   <p class="foot"><a href="https://games.csiesheep.com/">&larr; <span data-t="nav.hub"></span></a></p>
+</main>
+
+<!-- ===== Tutorial ===== -->
+<main id="view-tutorial" class="scr" hidden>
+  <div class="bar"><a href="." data-link data-t="nav.back"></a><span data-t="tutorial.nav"></span></div>
+  <div class="head"><p class="ph"><span data-t="tutorial.title"></span><small data-t="tutorial.sub"></small></p><div class="seal">引</div></div>
+  <div id="tutSteps"></div>
+  <button type="button" class="btn p tut-start" id="btnTutStart"><span data-t="tutorial.start"></span><i data-t="tutorial.startSub"></i></button>
+  <p class="note" data-t="tutorial.note"></p>
 </main>
 
 <!-- ===== Solo setup ===== -->
@@ -142,6 +152,7 @@
   <div class="vt" id="vtrack"></div>
   <div class="hour" id="hourBar" hidden></div>
   <div class="ring" id="ring"></div>
+  <div class="coach" id="coach" hidden></div>
   <div id="panel"></div>
   <div class="log" id="log" aria-live="polite"></div>
   <div class="chat" id="chatRow" hidden><label class="field grow"><input id="chatIn" maxlength="200" autocomplete="off"></label><button type="button" class="btn sm gh" id="chatSend"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>

@@ -42,6 +42,7 @@ function setLang(l) {
   $("lbChat").placeholder = t("table.say"); $("chatIn").placeholder = t("table.say");
   $("tableLeave").textContent = t("lobby.leave");
   renderSetup();
+  renderTutorial();
   if (game.lobby) renderLobby();
   if (curView()) render();
 }
@@ -85,6 +86,7 @@ const game = {
   st: null,           // solo: the full engine state
   view: null,         // net: this seat's view from the room
   me: 0, names: [], level: "normal", rng: null, gen: 0,
+  tut: null,          // the guided game: { seen: {coachKey: true}, pending: coachKey|null, scripted: bool }
   stage: null,        // null | "voteResult" | "missionResult" — the table pauses to show something
   stageTimer: null, botTimer: null, peeked: false, seen: false,
   picks: new Set(), log: [], lastVote: null, lastCards: null, hourSeen: 0,
@@ -118,7 +120,7 @@ function startGame() {
   game.mode = "solo";
   game.rng = E.makeRng(E.randomSeed());
   game.st = E.createGame(E.randomSeed(), n, { blindSpies: setup.blind, hours: setup.hours });
-  game.view = null; game.me = 0; game.level = setup.level;
+  game.view = null; game.me = 0; game.level = setup.level; game.tut = null;
   const pool = E.shuffle(game.rng, S.names.filter((x) => x !== setup.name));
   game.names = [setup.name || t("setup.defaultName"), ...pool.slice(0, n - 1)];
   game.stage = null; game.peeked = false; game.seen = false; game.picks = new Set(); game.log = []; game.lastVote = null; game.deadline = 0; game.hourSeen = 0;
@@ -127,6 +129,78 @@ function startGame() {
   show("table");
   render();
   tick();
+}
+
+// ---------- the guided game ----------
+// A fixed five-player table: seats 0 you, 1 Ah Qi, 2 Ma San (informer),
+// 3 Shitou, 4 Xiuniang (informer); Shitou leads first, so the token reaches
+// you on mission three. Bots follow a script while the game is on its rails
+// (their proposals, their votes, one 敗 on mission two) and fall back to their
+// normal policy the moment it leaves them. The guide slips are keyed off the
+// state, so an off-script game simply shows fewer of them.
+const TUT_SEATS = { mate: 1, leader: 3 };
+const TUT_TEAMS = { "0-3": [0, 1], "1-4": [1, 2, 4], "3-1": [0, 1, 3] };
+const COACH_ORDER = ["reveal", "vote1", "play1", "fail2", "lead3", "over"];
+function startTutorial() {
+  leaveRoom(true);
+  game.mode = "solo";
+  game.rng = E.makeRng(E.randomSeed());
+  const st = E.createGame(E.randomSeed(), 5, {});
+  st.roles = [E.RESISTANCE, E.RESISTANCE, E.SPY, E.RESISTANCE, E.SPY];
+  st.leader = TUT_SEATS.leader;
+  game.st = st;
+  game.view = null; game.me = 0; game.level = "normal";
+  game.names = [setup.name || t("setup.defaultName"), S.names[0], S.names[2], S.names[1], S.names[3]];
+  game.tut = { seen: {}, pending: null, scripted: false };
+  game.stage = null; game.peeked = false; game.seen = false; game.picks = new Set(); game.log = []; game.lastVote = null; game.deadline = 0; game.hourSeen = 0;
+  clearTimeout(game.stageTimer); clearTimeout(game.botTimer);
+  addSys(t("sys.dealt", { name: nameOf(game.st.leader) }));
+  show("table");
+  render();
+  tick();
+}
+function tutorialAction(seat) {
+  const st = game.st, m = st.mission;
+  if (st.phase === "propose") {
+    const team = TUT_TEAMS[`${m}-${seat}`];
+    return team ? { type: "propose", seat, team } : null;
+  }
+  if (st.phase === "vote") return game.tut.scripted || st.leader === game.me ? { type: "vote", seat, approve: true } : null;
+  if (st.phase === "mission") return { type: "play", seat, success: !E.isSpy(st, seat) || (m === 1 && seat === 4) };
+  return null;
+}
+function coachKey(v) {
+  if (!game.tut) return null;
+  const me = game.me, ev = v.event;
+  if (game.stage === "missionResult" && ev && ev.type === "mission") {
+    if (ev.mission === 1 && !ev.success) return "fail2";
+    if (ev.mission === 2 && !ev.success) return "fail3";
+    return null;
+  }
+  if (game.stage) return null;
+  if (v.phase === "vote" && v.mission === 0 && !v.voted[me]) return "vote1";
+  if (v.phase === "mission" && v.mission === 0 && v.proposal.includes(me) && v.myCard === null) return "play1";
+  if (v.phase === "propose" && v.mission === 2 && v.leader === me) return "lead3";
+  return null;
+}
+function coachSlip(key, button) {
+  const p = { leader: nameOf(TUT_SEATS.leader), mate: nameOf(TUT_SEATS.mate), team: nameList([1, 2, 4]), sus: nameList([2, 4]), clean: nameList([1, 3]) };
+  const i = COACH_ORDER.indexOf(key);
+  const step = i >= 0 ? t("tutorial.stepOf", { i: num(i + 1), n: num(COACH_ORDER.length) }) : "";
+  return `<span class="k">${esc(t("tutorial.guide"))}</span><div class="b"><p>${esc(t("tutorial.coach." + key, p))}</p><div class="f"><small>${esc(step)}</small>${button ? `<button type="button" id="coachOk">${esc(button)}</button>` : ""}</div></div>`;
+}
+function renderCoach(v) {
+  const el = $("coach");
+  const key = coachKey(v);
+  const on = !!key && !game.tut.seen[key];
+  if (game.tut) game.tut.pending = on ? key : null;
+  if (!on) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = coachSlip(key, game.stage ? t("tutorial.go") : t("tutorial.ok"));
+  $("coachOk").addEventListener("click", () => {
+    game.tut.seen[key] = true;
+    if (game.stage) continueStage(); else tick();
+  });
 }
 
 // A new round's Hour card goes in the log once, when the round actually starts.
@@ -142,8 +216,9 @@ function tick() {
   clearTimeout(game.botTimer);
   if (game.mode !== "solo" || !game.st || game.stage || game.st.phase === "over") { render(); return; }
   announceHour();
-  const bots = E.mustAct(game.st).filter((s) => s !== game.me);
   render();
+  if (game.tut && game.tut.pending) return;
+  const bots = E.mustAct(game.st).filter((s) => s !== game.me);
   if (!bots.length) return;
   const seat = bots[game.rng.int(bots.length)];
   const wait = DELAY[game.st.phase] * (0.6 + 0.8 * game.rng.next());
@@ -152,8 +227,10 @@ function tick() {
 function botAct(seat) {
   if (game.mode !== "solo" || !game.st || game.stage) return;
   const view = E.view(game.st, seat);
-  const action = B.decide(view, game.level, game.rng);
+  const scripted = game.tut ? tutorialAction(seat) : null;
+  const action = scripted || B.decide(view, game.level, game.rng);
   if (!action) return tick();
+  if (game.tut && action.type === "propose") game.tut.scripted = !!scripted;
   const line = view.hour === "silence" ? null : sayAction(action, view, talkCtx());
   game.st = E.apply(game.st, action);
   if (action.type === "propose") addSys(t("sys.proposed", { name: nameOf(seat), team: nameList(action.team) }));
@@ -198,6 +275,7 @@ function afterStep() {
     if (ev.cards) addSys(signedLine(ev), ev.fails > 0);
     if (ev.hour === "orders" && ev.success) addSys(t("hour.ordersClean", { team: nameList(ev.team) }));
     render();
+    const held = !!(game.tut && game.tut.pending);
     const speakers = ev.hour === "silence" ? []
       : E.shuffle(game.rng, [...Array(game.st.n).keys()].filter((s) => s !== game.me)).slice(0, ev.success ? 2 : 3);
     speakers.forEach((s, i) => setTimeout(() => {
@@ -205,7 +283,7 @@ function afterStep() {
       const line = sayResult(E.view(game.st, s), s, talkCtx());
       if (line) addSay(s, line);
     }, 1400 + i * 900));
-    game.stageTimer = setTimeout(continueStage, ev.over ? 5000 : 6500);
+    if (!held) game.stageTimer = setTimeout(continueStage, ev.over ? 5000 : 6500);
     return;
   }
   if (game.st.phase === "propose" && game.st.rejects === E.MAX_REJECTS - 1) addSys(t("sys.fifthWarning"), true);
@@ -371,6 +449,7 @@ function render() {
   const v = curView();
   if (!v) return;
   renderBar(v); renderTrack(v); renderVoteTrack(v); renderHour(v); renderRing(v); renderPanel(v); renderLog();
+  if (game.tut) renderCoach(v); else $("coach").hidden = true;
   renderOverlay(v);
   $("chatRow").hidden = game.mode !== "net";
   $("tableFoot").hidden = game.mode !== "net";
@@ -381,7 +460,7 @@ function render() {
 function fmtClock(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 function renderBar(v) {
   const left = v.phase === "over" ? t("over.title") : `${t("table.round", { n: num(Math.max(1, v.rounds.length)) })} · ${t("table.mission", { n: num(Math.min(v.mission + 1, E.MISSIONS)) })}`;
-  $("barLeft").textContent = left;
+  $("barLeft").textContent = game.tut ? `${t("tutorial.bar")} · ${left}` : left;
   const lead = v.leader === game.me ? t("table.youLead") : t("table.leads", { name: nameOf(v.leader) });
   const clock = game.mode === "net" && game.deadline && !game.stage && v.phase !== "over" ? ` <span class="t ${game.deadline - Date.now() < 10_000 ? "red" : ""}">${fmtClock(game.deadline - Date.now())}</span>` : "";
   $("barRight").innerHTML = v.phase === "over" ? "" : `<span class="t">${esc(lead)}</span>${clock}`;
@@ -547,7 +626,8 @@ function renderPanel(v) {
       return;
     case "over":
       p.innerHTML = overHtml(v);
-      { const b = $("btnAgain"); if (b) b.addEventListener("click", () => (game.mode === "solo" ? startGame() : send({ type: "rematch" }))); }
+      { const b = $("btnAgain"); if (b) b.addEventListener("click", () => (game.tut ? startTutorial() : game.mode === "solo" ? startGame() : send({ type: "rematch" }))); }
+      { const b = $("btnReal"); if (b) b.addEventListener("click", () => { game.tut = null; setup.n = 7; renderSetup(); history.replaceState(null, "", location.pathname + "?play"); startGame(); }); }
       return;
     default:
       p.innerHTML = "";
@@ -569,6 +649,14 @@ function overHtml(v) {
     return `<tr><td>${num(r.mission + 1)}${hourTag}</td><td>${esc(teamStr)}</td><td>${voteStr}</td><td>${res}</td></tr>`;
   }).join("");
   const you = me === null ? "" : `${esc(t("over.youWere", { role: mine ? t("roles.spy") : t("roles.resistance") }))} ${esc(won ? t("over.youWon") : t("over.youLost"))}`;
+  if (game.tut) {
+    const spies = nameList([...Array(v.n).keys()].filter((s) => v.roles[s] === E.SPY));
+    return `<div class="result-head"><span class="k">${esc(t("tutorial.endTitle"))}</span><span class="big blue">${esc(won ? t("tutorial.endWin") : t("tutorial.endLose"))}</span><span class="sub">${esc(t(won ? "tutorial.endWinText" : "tutorial.endLoseText", { spies }))}</span></div>
+    <ul class="tut-tips">${S.tutorial.tips.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+    <table class="h"><tr><th>${esc(t("over.hM"))}</th><th>${esc(t("over.hTeam"))}</th><th>${esc(t("over.hVote"))}</th><th>${esc(t("over.hResult"))}</th></tr>${rows}</table>
+    <button type="button" id="btnReal" class="btn p">${esc(t("tutorial.playReal"))}</button>
+    <div class="row"><a class="btn" href="rules">${esc(t("over.rules"))}</a><button type="button" id="btnAgain" class="btn gh">${esc(t("tutorial.again"))}</button></div>`;
+  }
   const again = game.mode === "solo" || game.me === 0
     ? `<button type="button" id="btnAgain" class="btn p">${esc(t("over.again"))}</button>`
     : `<span class="btn gh" style="opacity:.6">${esc(t("lobby.rematchWait"))}</span>`;
@@ -586,6 +674,7 @@ function renderOverlay(v) {
   const mates = spy ? (v.spies ? v.spies.filter((s) => s !== game.me) : null) : null;
   ov.hidden = false;
   ov.innerHTML = `<div class="sheet">
+    ${game.tut ? `<div class="coach">${coachSlip("reveal", null)}</div>` : ""}
     <div id="roleCard" class="card-role ${game.peeked ? (spy ? "spy" : "res") : "hidden-role"}">
       ${game.peeked ? `<span class="band">${esc(spy ? t("roles.spySide") : t("roles.resistanceSide"))}</span><span class="k">${esc(t("reveal.yourCard"))}</span><span class="role">${esc(spy ? t("reveal.spy") : t("reveal.res"))}</span><p>${esc(spy ? t("reveal.spyText") : t("reveal.resText"))}</p><span class="stamp">${esc(t(spy ? "reveal.stampSpy" : "reveal.stampRes"))}</span>`
         + (spy ? (mates ? `<span class="rule"></span><span class="k">${esc(t("reveal.others"))}</span><div class="mates">${mates.map((s) => `<div><span class="av">${esc([...nameOf(s)][0])}</span>${esc(nameOf(s))}</div>`).join("")}</div>` : `<p class="muted">${esc(t("reveal.blind"))}</p>`) : "")
@@ -605,7 +694,23 @@ function renderOverlay(v) {
 }
 
 // ---------- routing ----------
-const views = ["landing", "setup", "lobby", "table"];
+const views = ["landing", "tutorial", "setup", "lobby", "table"];
+function renderTutorial() {
+  const T = S.tutorial;
+  const ini = (s) => esc([...nameOf(s)][0]);
+  const av = (s, cls = "", lead = false) => `<span class="av ${cls}">${lead ? `<span class="lg">令</span>` : ""}${ini(s)}</span>`;
+  const names = [setup.name || t("setup.defaultName"), S.names[0], S.names[2], S.names[1], S.names[3]];
+  const saved = game.names; game.names = names;
+  const illos = [
+    `<div class="rc r">${esc(t("roles.resistance"))}</div><div class="rc s">${esc(t("roles.spy"))}</div>`,
+    `${av(3, "", true)}${av(0, "team you")}${av(1, "team")}${av(2)}${av(4)}`,
+    `<span class="vb y">${esc(t("table.approve"))}</span><span class="vb n">${esc(t("table.reject"))}</span>`,
+    `<div class="m ok">${esc(t("table.sealOk"))}</div><div class="m no">${esc(t("table.sealNo"))}</div>`,
+    `<div class="m ok mini">${esc(t("table.sealOk"))}</div><div class="m no mini">${esc(t("table.sealNo"))}</div><div class="m cur mini">${num(3)}</div><div class="m mini">${num(4)}</div><div class="m mini">${num(5)}</div>`,
+  ];
+  game.names = saved;
+  $("tutSteps").innerHTML = T.steps.map((st, i) => `<div class="tut-step"><div class="n">${num(i + 1)}</div><div class="b"><b>${esc(st.t)}</b><p>${esc(st.d)}</p><div class="tut-illo">${illos[i]}${st.c ? `<small>${esc(st.c)}</small>` : ""}</div></div></div>`).join("");
+}
 function show(name) { for (const v of views) $("view-" + v).hidden = v !== name; if (name !== "table") $("overlay").hidden = true; }
 function go(q) { history.pushState(null, "", location.pathname + q); route(); }
 function route() {
@@ -613,9 +718,15 @@ function route() {
   if (q.has("lang")) setLang(q.get("lang"));
   const code = (q.get("room") || "").toUpperCase();
   $("landStatus").textContent = ""; $("landStatus").className = "foot muted";
-  if (q.has("play")) {
+  if (q.get("play") === "tutorial") {
     leaveRoom(true); game.mode = "solo";
-    if (game.st && game.st.phase !== "over") { show("table"); render(); } else { show("setup"); renderSetup(); }
+    if (game.tut && game.st && game.st.phase !== "over") { show("table"); render(); } else startTutorial();
+  } else if (q.has("tutorial")) {
+    leaveRoom(true); game.mode = "solo"; game.view = null;
+    renderTutorial(); show("tutorial");
+  } else if (q.has("play")) {
+    leaveRoom(true); game.mode = "solo";
+    if (game.st && !game.tut && game.st.phase !== "over") { show("table"); render(); } else { show("setup"); renderSetup(); }
   } else if (/^[A-Z0-9]{4}$/.test(code)) {
     if (game.mode === "net" && game.code === code && game.ws) { show(game.view ? "table" : "lobby"); return; }
     if (!setup.name) { show("landing"); $("joinCode").value = code; $("landStatus").textContent = t("landing.soon"); $("landName").focus(); return; }
@@ -638,6 +749,8 @@ $("btnJoin").addEventListener("click", () => {
   go("?room=" + code);
 });
 $("joinCode").addEventListener("keydown", (e) => { if (e.key === "Enter") $("btnJoin").click(); });
+$("tutLink").addEventListener("click", (e) => { e.preventDefault(); go("?tutorial"); });
+$("btnTutStart").addEventListener("click", () => go("?play=tutorial"));
 document.querySelectorAll("[data-link]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); leaveRoom(); go(""); }));
 window.addEventListener("popstate", route);
 window.addEventListener("resize", () => { const v = curView(); if (v && !$("view-table").hidden) renderRing(v); });
