@@ -65,7 +65,9 @@ a { color: var(--red-d); }
 .hero-row .seal span { writing-mode: vertical-rl; letter-spacing: .06em; line-height: 1; }
 .hero { font-family: var(--disp); font-weight: 700; font-size: 40px; line-height: 1.05; margin: 0; letter-spacing: .01em; text-wrap: balance; }
 .hero-tag { font-size: 13px; letter-spacing: .32em; color: var(--mute); }
-html[lang="zh-Hant"] .hero { font-size: 84px; line-height: 1; letter-spacing: .06em; }
+/* 天地會 on one line beside the seal: three glyphs at .06em spacing take about
+   3.2em, and the seal plus gap take 100px of the column (at most 380px wide). */
+html[lang="zh-Hant"] .hero { font-size: min(72px, calc((min(100vw, 420px) - 140px) / 3.2)); line-height: 1; letter-spacing: .06em; white-space: nowrap; }
 html[lang="zh-Hant"] .hero-row .seal { width: 84px; height: 84px; font-size: 30px; }
 .tag-line { color: #4a3f35; font-size: 14.5px; line-height: 1.8; margin: 0; }
 
