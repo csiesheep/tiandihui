@@ -11,6 +11,7 @@ import * as B from "./shared/bots.js";
 import { sayAction, sayResult } from "./shared/talk.js";
 import en from "./i18n/en.js";
 import zh from "./i18n/zh-Hant.js";
+import { portalStart, portalResult, portalRestart, portalBeaconOnLeave } from "./portal.js";
 
 const LANGS = { en, "zh-Hant": zh };
 const $ = (id) => document.getElementById(id);
@@ -113,6 +114,26 @@ function signedLine(ev) {
   return failed.length ? t("hour.signedResult", { who: nameList(failed) }) : t("hour.signedClean");
 }
 
+// ---------- 遊戲路口 round reporting ----------
+// One platform round per dealt game in which this tab holds a seat. `key`
+// names the game (a solo deal, or a room code plus the room's deal number),
+// so re-renders and same-page reconnects never open a second round. The
+// guided tutorial and spectators are not reported. Nothing here is awaited,
+// and without ?gp_token every call is a no-op.
+const portal = { opened: false, live: false, key: null, n: 0 };
+function portalBegin(key) {
+  if (portal.key === key) return;
+  const unfinished = portal.live;
+  portal.key = key; portal.live = true;
+  if (!portal.opened) { portal.opened = true; portalStart(); }
+  else portalRestart(unfinished ? "abandon" : undefined);
+}
+function portalEnd(key, won) {
+  if (portal.key !== key || !portal.live) return;
+  portal.live = false;
+  portalResult(won ? "win" : "lose");
+}
+
 // ---------- solo ----------
 function startGame() {
   leaveRoom(true);
@@ -121,6 +142,7 @@ function startGame() {
   game.rng = E.makeRng(E.randomSeed());
   game.st = E.createGame(E.randomSeed(), n, { blindSpies: setup.blind, hours: setup.hours });
   game.view = null; game.me = 0; game.level = setup.level; game.tut = null;
+  game.pkey = "solo:" + ++portal.n;
   const pool = E.shuffle(game.rng, S.names.filter((x) => x !== setup.name));
   game.names = [setup.name || t("setup.defaultName"), ...pool.slice(0, n - 1)];
   game.stage = null; game.peeked = false; game.seen = false; game.picks = new Set(); game.log = []; game.lastVote = null; game.deadline = 0; game.hourSeen = 0;
@@ -128,6 +150,7 @@ function startGame() {
   addSys(t("sys.dealt", { name: nameOf(game.st.leader) }));
   show("table");
   render();
+  portalBegin(game.pkey);
   tick();
 }
 
@@ -149,7 +172,7 @@ function startTutorial() {
   st.roles = [E.RESISTANCE, E.RESISTANCE, E.SPY, E.RESISTANCE, E.SPY];
   st.leader = TUT_SEATS.leader;
   game.st = st;
-  game.view = null; game.me = 0; game.level = "normal";
+  game.view = null; game.me = 0; game.level = "normal"; game.pkey = null;
   game.names = [setup.name || t("setup.defaultName"), S.names[0], S.names[2], S.names[1], S.names[3]];
   game.tut = { seen: {}, pending: null, scripted: false };
   game.stage = null; game.peeked = false; game.seen = false; game.picks = new Set(); game.log = []; game.lastVote = null; game.deadline = 0; game.hourSeen = 0;
@@ -249,6 +272,7 @@ function humanAct(action) {
 // After any solo action: pause on the events people need to see, else keep going.
 function afterStep() {
   const ev = game.st.event;
+  if (game.st.phase === "over" && game.pkey) portalEnd(game.pkey, game.st.roles[game.me] === game.st.winner);
   if (ev && ev.type === "voted") {
     game.stage = "voteResult";
     game.lastVote = ev;
@@ -355,6 +379,11 @@ function onMsg(m) {
       if (!m.view) { game.view = null; if (game.lobby) { show("lobby"); renderLobby(); } break; }
       if (m.gen !== game.gen) { game.gen = m.gen; game.seen = false; game.peeked = false; game.picks = new Set(); }
       game.view = m.view; game.names = m.names; game.me = m.me; game.deadline = m.deadline || 0;
+      if (m.me !== null && m.me !== undefined) {
+        const key = "room:" + game.code + ":" + m.gen;
+        if (m.view.phase === "over") portalEnd(key, m.view.role === m.view.winner);
+        else portalBegin(key);
+      }
       game.stage = m.stage ? m.stage.kind : null;
       if (m.stage && m.stage.kind === "voteResult") game.lastVote = m.stage.event;
       if (m.stage && m.stage.cards) game.lastCards = m.stage.cards;
@@ -754,6 +783,10 @@ $("btnTutStart").addEventListener("click", () => go("?play=tutorial"));
 document.querySelectorAll("[data-link]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); leaveRoom(); go(""); }));
 window.addEventListener("popstate", route);
 window.addEventListener("resize", () => { const v = curView(); if (v && !$("view-table").hidden) renderRing(v); });
+
+// Closing or leaving the page mid-game reports the round as abandoned; a
+// finished game has already been reported and sends nothing.
+portalBeaconOnLeave(() => ({ outcome: "abandon" }));
 
 const q0 = new URLSearchParams(location.search);
 setLang(q0.get("lang") || store.get("tr.lang", (navigator.language || "en").toLowerCase().startsWith("zh") ? "zh-Hant" : "en"));
