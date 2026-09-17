@@ -16,6 +16,8 @@ Everything runs on Cloudflare as one Worker, the same shape as [Dice Wars](https
 
 Rules of the table: 30 s to read your card, 90 s to propose, 30 s to vote, 30 s to play a card; when time runs out the table decides for whoever has not acted. A player who drops is played by a bot after 15 s and gets the seat back by reopening the link in the same tab. A player who leaves mid-game becomes a bot. The host can add bots to fill seats, and a room nobody is connected to is deleted after 30 minutes. The room's language is the host's when it was created; it governs bot talk and the table log.
 
+Round reporting: opened from the 遊戲路口 portal (try-our-games.vercel.app), the URL carries `?gp_token=…` and `public/portal.js` (the platform's reference implementation, unchanged) reports each solo or room game the player holds a seat in: start or end-and-restart when a game is dealt, win or lose when it is decided, abandon when the page is left mid-game. The guided tutorial and spectators are not reported. Without a token nothing is sent.
+
 URLs are query strings on the page so the same build works at any prefix:
 
 - `/tiandihui/` landing
