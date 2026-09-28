@@ -7,7 +7,7 @@ export default {
   heroTag: "Sworn in blood",
   tagline: "Sworn in blood to bring down the Qing. Three missions will do it, if the informers among us don't wreck them first.",
   credit: "A free fan project, not affiliated with any publisher. The play is inspired by The Resistance, a social deduction game designed by Don Eskridge.",
-  nav: { back: "Back", rules: "How to play", hub: "csiesheep games", lang: "中文", solo: "solo" },
+  nav: { back: "Back", rules: "How to play", hub: "csiesheep games", lang: "中文", solo: "solo", privacy: "Privacy" },
   landing: { play: "Play vs bots", create: "Create a room", join: "Join", code: "Room code", soon: "Rooms need a name: type yours below, then create or join.", badCode: "Enter the four-letter room code.", name: "Your name",
     about: "A social deduction game in the family of The Resistance and Avalon: hidden roles, team votes and missions for five to ten players, about twenty minutes a game. Play solo against AI bots that talk at the table, or open a free online room and share a four-letter code with friends. English and Traditional Chinese." },
   setup: {
